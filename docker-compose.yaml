@@ -7,3 +7,9 @@ services:
     build:
       context: ./analyzer
     container_name: analyzer
+  web:
+    build:
+      context: ./web
+    container_name: web
+    ports:
+      - "8000:8000"
