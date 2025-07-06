@@ -3,3 +3,7 @@ services:
     build:
       context: ./collector
     container_name: collector
+  analyzer:
+    build:
+      context: ./analyzer
+    container_name: analyzer
