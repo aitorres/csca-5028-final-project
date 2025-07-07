@@ -24,4 +24,7 @@ def test_home_route(web_client):
 
     response = web_client.get('/')
     assert response.status_code == 200
-    assert response.data == b'Welcome to the Web Application!'
+    content = response.get_data(as_text=True)
+
+    assert "What's up in Vancouver?" in content
+    assert "CU Boulder's MSCS program" in content

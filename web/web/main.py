@@ -4,7 +4,7 @@ Main entry point for the web application.
 
 import logging
 
-from flask import Flask
+from flask import Flask, render_template
 
 
 app = Flask(__name__)
@@ -18,7 +18,7 @@ def home():
     """
 
     logger.info("Home route accessed")
-    return "Welcome to the Web Application!"
+    return render_template("home.html")
 
 
 def main():
