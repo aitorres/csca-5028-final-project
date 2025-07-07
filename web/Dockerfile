@@ -18,6 +18,6 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies
-RUN poetry install --no-root --only main
+RUN poetry install --no-root
 
 CMD ["poetry", "run", "python", "-m", "web.main"]
