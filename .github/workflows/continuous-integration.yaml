@@ -8,7 +8,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Build Docker image
-              run: docker build -t web -f web/Dockerfile .
+              run: docker build -t web -f web/Dockerfile web
             - name: Check style with flake8
               run: docker run --rm web poetry run flake8 web
             - name: Check types with mypy
