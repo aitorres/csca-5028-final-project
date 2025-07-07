@@ -20,4 +20,4 @@ COPY . .
 # Install dependencies
 RUN poetry install --no-root
 
-CMD ["poetry", "run", "python", "-m", "web.main"]
+CMD ["poetry", "run", "gunicorn", "-w", "2", "-b", "0.0.0:8080", "web.main:app"]
