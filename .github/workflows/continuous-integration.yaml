@@ -1,0 +1,19 @@
+name: Continuous Integration
+
+on: [push]
+
+jobs:
+    build_web:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - name: Build Docker image
+              run: docker build -t web -f web/Dockerfile .
+            - name: Check style with flake8
+              run: docker run --rm web poetry run flake8 web
+            - name: Check types with mypy
+              run: docker run --rm web poetry run mypy web
+            - name: Lint files with pylint
+              run: docker run --rm web poetry run pylint web
+            - name: Run web tests in Docker
+              run: docker run --rm web poetry run pytest
