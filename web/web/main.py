@@ -2,7 +2,7 @@
 Main entry point for the web application.
 """
 
-from flask import Flask, request
+from flask import Flask
 
 import logging
 
