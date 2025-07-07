@@ -2,9 +2,23 @@
 Main entry point for the web application.
 """
 
+from flask import Flask, request
+
 import logging
 
+app = Flask(__name__)
 logger = logging.getLogger(__name__)
+
+
+@app.route("/", methods=["GET"])
+def home():
+    """
+    Home route that returns a welcome message.
+    """
+
+    logger.info("Home route accessed")
+    return "Welcome to the Web Application!"
+
 
 def main():
     """
@@ -12,7 +26,7 @@ def main():
     """
 
     logger.info("Starting the web application...")
-    # TODO: Implement the main logic of the web application.
+    app.run()
 
 
 if __name__ == "__main__":
