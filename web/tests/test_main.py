@@ -1,19 +1,27 @@
+"""
+Unit tests for the web application's main module.
+"""
+
 import pytest
 
-@pytest.fixture
-def client():
+from web.main import app
+
+
+@pytest.fixture(name='web_client')
+def fixture_web_client():
     """
     Create a test client for the Flask application.
     """
-    from web.main import app
+
     with app.test_client() as client:
         yield client
 
-def test_home_route(client):
+
+def test_home_route(web_client):
     """
     Test the home route of the web application.
     """
 
-    response = client.get('/')
+    response = web_client.get('/')
     assert response.status_code == 200
     assert response.data == b'Welcome to the Web Application!'
