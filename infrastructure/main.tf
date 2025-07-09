@@ -40,6 +40,16 @@ resource "azurerm_container_app" "web_app" {
   resource_group_name          = azurerm_resource_group.resource_group.name
   revision_mode                = "Single"
 
+  identity {
+    type = "SystemAssigned"
+  }
+
+  registry {
+    server   = azurerm_container_registry.container_registry.login_server
+    username = azurerm_container_registry.container_registry.admin_username
+    password = azurerm_container_registry.container_registry.admin_password
+  }
+
   template {
     container {
       name   = "web"
