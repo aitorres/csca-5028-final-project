@@ -19,9 +19,3 @@ variable "azure_location" {
   type        = string
   default     = "westus3"
 }
-
-variable "use_oidc" {
-  description = "Whether to use OIDC for authentication."
-  type        = bool
-  default     = false
-}
