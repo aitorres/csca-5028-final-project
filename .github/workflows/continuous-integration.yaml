@@ -25,8 +25,9 @@ jobs:
           password: ${{ secrets.AZURE_ACR_REGISTRY_PASSWORD }}
       - name: Build and push image to Azure Container Registry
         run: |
-          docker build -f web/Dockerfile web -t csca5028finalprojectacr.azurecr.io/web:latest
-          docker push csca5028finalprojectacr.azurecr.io/web:latest
+          COMMIT_HASH=${{ github.sha }}
+          docker build -f web/Dockerfile web -t csca5028finalprojectacr.azurecr.io/web:${COMMIT_HASH}
+          docker push csca5028finalprojectacr.azurecr.io/web:${COMMIT_HASH}
 
   deploy_infrastructure:
     runs-on: ubuntu-latest
@@ -39,6 +40,7 @@ jobs:
     env:
       TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+      TF_VAR_web_image_tag: ${{ github.sha }}
 
     steps:
       - uses: actions/checkout@v4

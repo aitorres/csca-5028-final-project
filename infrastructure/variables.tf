@@ -19,3 +19,9 @@ variable "azure_tenant_id" {
   description = "The Azure tenant ID to use for the resources."
   type        = string
 }
+
+variable "web_image_tag" {
+  description = "The tag for the web application Docker image."
+  type        = string
+  default     = "latest"
+}

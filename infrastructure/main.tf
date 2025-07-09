@@ -44,7 +44,7 @@ resource "azurerm_container_app" "web_app" {
   template {
     container {
       name  = "web"
-      image  = "${azurerm_container_registry.container_registry.login_server}/web:latest"
+      image  = "${azurerm_container_registry.container_registry.login_server}/web:${var.web_image_tag}"
       cpu    = "0.25"
       memory = "0.5Gi"
 
