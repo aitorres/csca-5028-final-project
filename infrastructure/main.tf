@@ -35,14 +35,14 @@ resource "azurerm_container_app_environment" "production_env" {
 
 // Container app for hosting the web application
 resource "azurerm_container_app" "web_app" {
-  name = "web"
+  name                         = "web"
   container_app_environment_id = azurerm_container_app_environment.production_env.id
-  resource_group_name        = azurerm_resource_group.resource_group.name
-  revision_mode            = "Single"
+  resource_group_name          = azurerm_resource_group.resource_group.name
+  revision_mode                = "Single"
 
   template {
     container {
-      name  = "web"
+      name   = "web"
       image  = "${azurerm_container_registry.container_registry.login_server}/web:${var.web_image_tag}"
       cpu    = "0.25"
       memory = "0.5Gi"
