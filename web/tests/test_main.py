@@ -2,13 +2,16 @@
 Unit tests for the web application's main module.
 """
 
+from typing import Generator
+
 import pytest
+from flask.testing import FlaskClient
 
 from web.main import app
 
 
 @pytest.fixture(name='web_client')
-def fixture_web_client():
+def fixture_web_client() -> Generator[FlaskClient, None, None]:
     """
     Create a test client for the Flask application.
     """
@@ -17,7 +20,7 @@ def fixture_web_client():
         yield client
 
 
-def test_home_route(web_client):
+def test_home_route(web_client) -> None:
     """
     Test the home route of the web application.
     """
@@ -30,7 +33,7 @@ def test_home_route(web_client):
     assert "CU Boulder's MSCS program" in content
 
 
-def test_health_check_route(web_client):
+def test_health_check_route(web_client) -> None:
     """
     Test the health check route of the web application.
     """
