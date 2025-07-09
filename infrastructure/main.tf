@@ -77,6 +77,7 @@ resource "azurerm_container_app" "web_app" {
     traffic_weight {
       label = "web"
       percentage = 100
+      latest_revision = true
     }
   }
 }
