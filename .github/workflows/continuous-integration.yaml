@@ -23,11 +23,16 @@ jobs:
           login-server: csca5028finalprojectacr.azurecr.io
           username: ${{ secrets.AZURE_ACR_REGISTRY_USERNAME }}
           password: ${{ secrets.AZURE_ACR_REGISTRY_PASSWORD }}
+      - name: Compute hash of web directory
+        id: web_hash
+        run: |
+          HASH=$(find web -type f -exec sha1sum {} \; | sort | sha1sum | awk '{print $1}')
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
       - name: Build and push image to Azure Container Registry
         run: |
-          COMMIT_HASH=${{ github.sha }}
-          docker build -f web/Dockerfile web -t csca5028finalprojectacr.azurecr.io/web:${COMMIT_HASH}
-          docker push csca5028finalprojectacr.azurecr.io/web:${COMMIT_HASH}
+          HASH=${{ steps.web_hash.outputs.hash }}
+          docker build -f web/Dockerfile web -t csca5028finalprojectacr.azurecr.io/web:${HASH}
+          docker push csca5028finalprojectacr.azurecr.io/web:${HASH}
 
   deploy_infrastructure:
     runs-on: ubuntu-latest
@@ -40,7 +45,7 @@ jobs:
     env:
       TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-      TF_VAR_web_image_tag: ${{ github.sha }}
+      TF_VAR_web_image_tag: ${{ needs.build_web.outputs.web_hash }}
 
     steps:
       - uses: actions/checkout@v4
