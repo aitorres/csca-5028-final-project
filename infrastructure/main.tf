@@ -68,4 +68,15 @@ resource "azurerm_container_app" "web_app" {
       }
     }
   }
+
+  ingress {
+    external_enabled = true
+    target_port = 8080
+    transport = "auto"
+
+    traffic_weight {
+      label = "web"
+      percentage = 100
+    }
+  }
 }
