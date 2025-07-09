@@ -38,7 +38,6 @@ resource "azurerm_container_app" "web_app" {
   name = "web"
   container_app_environment_id = azurerm_container_app_environment.production_env.id
   resource_group_name        = azurerm_resource_group.resource_group.name
-  location                   = azurerm_resource_group.resource_group.location
   revision_mode            = "Single"
 
   template {
