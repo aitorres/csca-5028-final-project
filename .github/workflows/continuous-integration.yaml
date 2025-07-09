@@ -9,6 +9,16 @@ jobs:
       web_hash: ${{ steps.web_hash.outputs.hash }}
     steps:
       - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t web -f web/Dockerfile web
+      - name: Check style with flake8
+        run: docker run --rm web poetry run flake8 web
+      - name: Check types with mypy
+        run: docker run --rm web poetry run mypy web
+      - name: Lint files with pylint
+        run: docker run --rm web poetry run pylint web
+      - name: Run web tests in Docker
+        run: docker run --rm web poetry run pytest
       - name: Log in to Azure Container Registry
         uses: docker/login-action@v3
         with:
@@ -20,35 +30,7 @@ jobs:
         run: |
           HASH=$(find web -type f -exec sha1sum {} \; | sort | sha1sum | awk '{print $1}')
           echo "hash=$HASH" >> $GITHUB_OUTPUT
-      - name: Check if image exists in ACR
-        id: image_exists
-        run: |
-          if az acr repository show-tags --name csca5028finalprojectacr --repository web --query "contains(@, '${{ steps.web_hash.outputs.hash }}')" | grep true; then
-          echo "exists=true" >> $GITHUB_OUTPUT
-            else
-          echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-        env:
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      - name: Build Docker image
-        if: steps.image_exists.outputs.exists == 'false'
-        run: docker build -t web -f web/Dockerfile web
-      - name: Check style with flake8
-        if: steps.image_exists.outputs.exists == 'false'
-        run: docker run --rm web poetry run flake8 web
-      - name: Check types with mypy
-        if: steps.image_exists.outputs.exists == 'false'
-        run: docker run --rm web poetry run mypy web
-      - name: Lint files with pylint
-        if: steps.image_exists.outputs.exists == 'false'
-
-        run: docker run --rm web poetry run pylint web
-      - name: Run web tests in Docker
-        if: steps.image_exists.outputs.exists == 'false'
-        run: docker run --rm web poetry run pytest
       - name: Build and push image to Azure Container Registry
-        if: steps.image_exists.outputs.exists == 'false'
         run: |
           HASH=${{ steps.web_hash.outputs.hash }}
           docker build -f web/Dockerfile web -t csca5028finalprojectacr.azurecr.io/web:${HASH}
