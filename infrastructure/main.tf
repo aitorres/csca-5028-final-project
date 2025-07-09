@@ -71,7 +71,7 @@ resource "azurerm_container_app" "web_app" {
         initial_delay           = 30
         interval_seconds        = 10
         failure_count_threshold = 3
-        transport               = "http"
+        transport               = "HTTP"
         path                    = "/health"
         port                    = 8080
       }
