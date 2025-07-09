@@ -19,11 +19,11 @@ resource "azurerm_container_registry" "container_registry" {
 
 // Container app environment for hosting applications
 resource "azurerm_log_analytics_workspace" "analytics_workspace" {
-  name                = "finalproject_analytics_workspace"
+  name                = "FinalProject-AnalyticsWorkspace"
   location            = azurerm_resource_group.resource_group.location
   resource_group_name = azurerm_resource_group.resource_group.name
   sku                 = "PerGB2018"
-  retention_in_days   = 14
+  retention_in_days   = 30
 }
 
 resource "azurerm_container_app_environment" "production_env" {
