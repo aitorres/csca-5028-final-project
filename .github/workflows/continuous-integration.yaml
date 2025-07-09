@@ -3,17 +3,43 @@ name: Continuous Integration
 on: [push]
 
 jobs:
-    build_web:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            - name: Build Docker image
-              run: docker build -t web -f web/Dockerfile web
-            - name: Check style with flake8
-              run: docker run --rm web poetry run flake8 web
-            - name: Check types with mypy
-              run: docker run --rm web poetry run mypy web
-            - name: Lint files with pylint
-              run: docker run --rm web poetry run pylint web
-            - name: Run web tests in Docker
-              run: docker run --rm web poetry run pytest
+  build_web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t web -f web/Dockerfile web
+      - name: Check style with flake8
+        run: docker run --rm web poetry run flake8 web
+      - name: Check types with mypy
+        run: docker run --rm web poetry run mypy web
+      - name: Lint files with pylint
+        run: docker run --rm web poetry run pylint web
+      - name: Run web tests in Docker
+        run: docker run --rm web poetry run pytest
+
+  deploy_infrastructure:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: build_web
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+      TF_VAR_use_oidc: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+            terraform_version: 1.12.2
+      - name: Initialize Terraform
+        run: terraform init
+      - name: Validate Terraform configuration
+        run: terraform validate
+      - name: Plan Terraform deployment
+        run: terraform plan
+      - name: Apply Terraform deployment
+        run: terraform apply -auto-approve
