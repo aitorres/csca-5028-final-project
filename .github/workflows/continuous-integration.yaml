@@ -45,7 +45,5 @@ jobs:
         run: terraform init
       - name: Validate Terraform configuration
         run: terraform validate
-      - name: Plan Terraform deployment
-        run: terraform plan
       - name: Apply Terraform deployment
         run: terraform apply -auto-approve
