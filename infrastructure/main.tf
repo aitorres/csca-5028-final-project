@@ -16,3 +16,47 @@ resource "azurerm_container_registry" "container_registry" {
     environment = "production"
   }
 }
+
+// Container app environment for hosting applications
+resource "azurerm_log_analytics_workspace" "analytics_workspace" {
+  name                = "finalproject_analytics_workspace"
+  location            = azurerm_resource_group.resource_group.location
+  resource_group_name = azurerm_resource_group.resource_group.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 14
+}
+
+resource "azurerm_container_app_environment" "production_env" {
+  name                       = "ProductionEnvironment"
+  location                   = azurerm_resource_group.resource_group.location
+  resource_group_name        = azurerm_resource_group.resource_group.name
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.analytics_workspace.id
+}
+
+// Container app for hosting the web application
+resource "azurerm_container_app" "web_app" {
+  name = "web"
+  container_app_environment_id = azurerm_container_app_environment.production_env.id
+  resource_group_name        = azurerm_resource_group.resource_group.name
+  location                   = azurerm_resource_group.resource_group.location
+  revision_mode            = "Single"
+
+  template {
+    container {
+      name  = "web"
+      image  = "${azurerm_container_registry.container_registry.login_server}/web:latest"
+      cpu    = "0.25"
+      memory = "0.5Gi"
+
+      ports {
+        port     = 80
+        protocol = "TCP"
+      }
+
+      env {
+        name  = "ENVIRONMENT"
+        value = "production"
+      }
+    }
+  }
+}
