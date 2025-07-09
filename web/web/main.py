@@ -10,6 +10,15 @@ from flask import Flask, render_template
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
 
+@app.route("/health", methods=["GET"])
+def health_check():
+    """
+    Health check route to verify the application is running.
+    """
+
+    logger.debug("Health check route accessed")
+    return "ok", 200
+
 
 @app.route("/", methods=["GET"])
 def home():

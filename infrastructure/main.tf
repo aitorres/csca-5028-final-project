@@ -45,13 +45,13 @@ resource "azurerm_container_app" "web_app" {
   }
 
   registry {
-    server   = azurerm_container_registry.container_registry.login_server
-    username = azurerm_container_registry.container_registry.admin_username
+    server               = azurerm_container_registry.container_registry.login_server
+    username             = azurerm_container_registry.container_registry.admin_username
     password_secret_name = "acrpassword"
   }
 
   secret {
-    name = "acrpassword"
+    name  = "acrpassword"
     value = azurerm_container_registry.container_registry.admin_password
   }
 
@@ -66,17 +66,26 @@ resource "azurerm_container_app" "web_app" {
         name  = "ENVIRONMENT"
         value = "production"
       }
+
+      liveness_probe {
+        initial_delay           = 30
+        interval_seconds        = 10
+        failure_count_threshold = 3
+        transport               = "http"
+        path                    = "/health"
+        port                    = 8080
+      }
     }
   }
 
   ingress {
     external_enabled = true
-    target_port = 8080
-    transport = "auto"
+    target_port      = 8080
+    transport        = "auto"
 
     traffic_weight {
-      label = "web"
-      percentage = 100
+      label           = "web"
+      percentage      = 100
       latest_revision = true
     }
   }

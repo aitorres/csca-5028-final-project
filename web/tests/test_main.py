@@ -28,3 +28,13 @@ def test_home_route(web_client):
 
     assert "What's up in Vancouver?" in content
     assert "CU Boulder's MSCS program" in content
+
+
+def test_health_check_route(web_client):
+    """
+    Test the health check route of the web application.
+    """
+
+    response = web_client.get('/health')
+    assert response.status_code == 200
+    assert response.get_data(as_text=True) == "ok"
