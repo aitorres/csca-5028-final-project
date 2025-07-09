@@ -48,11 +48,6 @@ resource "azurerm_container_app" "web_app" {
       cpu    = "0.25"
       memory = "0.5Gi"
 
-      ports {
-        port     = 80
-        protocol = "TCP"
-      }
-
       env {
         name  = "ENVIRONMENT"
         value = "production"
