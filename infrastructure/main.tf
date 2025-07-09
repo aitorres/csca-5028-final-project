@@ -47,11 +47,11 @@ resource "azurerm_container_app" "web_app" {
   registry {
     server   = azurerm_container_registry.container_registry.login_server
     username = azurerm_container_registry.container_registry.admin_username
-    password_secret_name = "acrPassword"
+    password_secret_name = "acrpassword"
   }
 
   secret {
-    name = "acrPassword"
+    name = "acrpassword"
     value = azurerm_container_registry.container_registry.admin_password
   }
 
