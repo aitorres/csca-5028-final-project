@@ -18,6 +18,14 @@ BLUESKY_JETSTREAM_WEBSOCKET_URL: Final[str] = (
     "?wantedCollections=app.bsky.feed.post"
 )
 
+# Terms to use for filtering posts related to Vancouver
+VANCOUVER_FILTER_TERMS: Final[list[str]] = [
+    "vancouver",
+    "yvr",
+    "vancity",
+    "vancouverbc",
+]
+
 
 def parse_and_filter_record(message: str) -> Optional[dict[str, Any]]:
     """
@@ -51,13 +59,44 @@ def parse_and_filter_record(message: str) -> Optional[dict[str, Any]]:
     return record
 
 
+def filter_record_by_message(record: dict[str, Any]) -> Optional[dict[str, Any]]:
+    """
+    Given a Bluesky post record from the WebSocket connection,
+    filters it to include only posts in English that are related
+    to the city of Vancouver.
+
+    :param record: The Bluesky post record to filter.
+    :return: The record if it matches the criteria, or None.
+    """
+
+    if "langs" in record and record["langs"] and "en" not in record["langs"][0]:
+        return None
+
+    if "text" not in record or not isinstance(record["text"], str):
+        return None
+
+    text = record["text"].lower()
+
+    if any(term in text for term in VANCOUVER_FILTER_TERMS):
+        # The post is related to Vancouver, return it
+        return record
+
+    return None
+
+
 async def process_websocket_message(message: str) -> None:
     """
     Processes a message received from the WebSocket connection,
     which represents a Bluesky Jetstream event.
     """
 
-    parse_and_filter_record(message)
+    record = parse_and_filter_record(message)
+
+    if record is not None:
+        filtered_record = filter_record_by_message(record)
+
+        if filtered_record is not None:
+            logger.info("Record related to Vancouver found: %s", filtered_record)
 
 
 async def main():
