@@ -13,7 +13,6 @@ def main():
     """
 
     logger.info("Starting the collector application...")
-    # TODO: Implement the main logic of the collector application.
 
 
 if __name__ == "__main__":

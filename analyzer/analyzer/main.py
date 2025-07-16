@@ -13,7 +13,6 @@ def main():
     """
 
     logger.info("Starting the analyzer application...")
-    # TODO: Implement the main logic of the analyzer application.
 
 
 if __name__ == "__main__":
