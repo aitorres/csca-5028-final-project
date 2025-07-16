@@ -10,7 +10,7 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 
 # Ensure NLTK resources are downloaded
-for resource in ["stopwords", "punkt_tab", "wordnet", "tokenizers"]:
+for resource in ["stopwords", "punkt_tab", "wordnet"]:
     nltk.download(resource)
 
 logger = logging.getLogger(__name__)
