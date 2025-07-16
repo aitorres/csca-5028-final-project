@@ -137,8 +137,9 @@ jobs:
         run: terraform apply -auto-approve
       - name: Output web app URL
         run: |
-          WEB_APP_URL=$(terraform output -json web_app_url)
+          WEB_APP_URL="https://$(terraform output -json web_app_url | tr -d '"')"
           echo "web_app_url=$WEB_APP_URL" >> $GITHUB_OUTPUT
+          echo "Web app URL: $WEB_APP_URL"
         id: output_web_app_url
 
   create_github_deployment:
