@@ -189,7 +189,6 @@ def test_process_websocket_message(
         _, kwargs = channel_spy.call_args
 
         # Validate rabbitmq details
-        assert kwargs["exchange"] == RABBITMQ_EXCHANGE_NAME
         assert kwargs["routing_key"] == RABBITMQ_QUEUE_NAME
 
         # Validate the body of the message

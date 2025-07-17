@@ -38,7 +38,6 @@ RABBITMQ_PORT: Final[int] = int(os.environ.get("RABBITMQ_PORT", "5672"))
 RABBITMQ_USER: Final[str] = os.environ.get("RABBITMQ_USER", "guest")
 RABBITMQ_PASSWORD: Final[str] = os.environ.get("RABBITMQ_PASSWORD", "guest")
 RABBITMQ_QUEUE_NAME: Final[str] = os.environ.get("RABBITMQ_QUEUE_NAME", "queue")
-RABBITMQ_EXCHANGE_NAME: Final[str] = os.environ.get("RABBITMQ_EXCHANGE_NAME", "exchange")
 
 
 def setup_queue() -> BlockingChannel:
@@ -154,7 +153,7 @@ def process_websocket_event(message: str, channel: BlockingChannel) -> None:
             logger.info("Record related to Vancouver found: %s", message)
 
             channel.basic_publish(
-                exchange=RABBITMQ_EXCHANGE_NAME,
+                exchange='',
                 routing_key=RABBITMQ_QUEUE_NAME,
                 body=message,
                 properties=pika.BasicProperties(
