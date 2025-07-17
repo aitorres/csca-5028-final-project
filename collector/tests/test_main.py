@@ -11,7 +11,6 @@ from collector.main import (
     parse_and_filter_record,
     process_websocket_event,
     transform_record_to_message,
-    RABBITMQ_EXCHANGE_NAME,
     RABBITMQ_QUEUE_NAME,
 )
 
