@@ -13,10 +13,11 @@ import pika
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from pika.adapters.blocking_connection import BlockingChannel
 
 # Ensure NLTK resources are downloaded
-for resource in ["stopwords", "punkt_tab", "wordnet"]:
+for resource in ["stopwords", "punkt_tab", "wordnet", "vader_lexicon"]:
     nltk.download(resource)
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,13 @@ RABBITMQ_QUEUE_NAME: Final[str] = os.environ.get("RABBITMQ_QUEUE_NAME", "queue")
 
 # Delay in seconds before polling the RabbitMQ queue
 POLLING_DELAY: Final[int] = 3
+
+# Sentiment analyzer and constants
+sentiment_analyzer = SentimentIntensityAnalyzer()
+SENTIMENT_THRESHOLD: Final[float] = 0.40
+SENTIMENT_POSITIVE: Final[str] = "positive"
+SENTIMENT_NEUTRAL: Final[str] = "neutral"
+SENTIMENT_NEGATIVE: Final[str] = "negative"
 
 
 def setup_queue() -> BlockingChannel:
@@ -84,6 +92,30 @@ def preprocess_text(text: str) -> str:
     return " ".join(tokens)
 
 
+def analyze_sentiment(text: str) -> str:
+    """
+    Given an input string which is assumed preprocessed,
+    calculates the sentiment of the text by using NLTK
+    VADER sentiment analysis.
+
+    We get a compound score and classify it as positive,
+    neutral, or negative based on a threshold.
+
+    :param text: The preprocessed text to analyze.
+    :return: The sentiment classification as a string.
+    """
+
+    score = sentiment_analyzer.polarity_scores(text)["compound"]
+
+    if score >= SENTIMENT_THRESHOLD:
+        return SENTIMENT_POSITIVE
+
+    if score <= -SENTIMENT_THRESHOLD:
+        return SENTIMENT_NEGATIVE
+
+    return SENTIMENT_NEUTRAL
+
+
 def process_queue_message(message: str) -> None:
     """
     Given a message from the RabbitMQ queue,
@@ -111,6 +143,9 @@ def process_queue_message(message: str) -> None:
     text = record["text"]
     preprocessed_text = preprocess_text(text)
     logger.info("Preprocessed text: %s", preprocessed_text)
+
+    sentiment = analyze_sentiment(preprocessed_text)
+    logger.info("Sentiment analysis result: %s", sentiment)
 
 
 async def main():

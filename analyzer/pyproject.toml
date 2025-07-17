@@ -33,7 +33,7 @@ warn_return_any = true
 warn_unused_configs = true
 
 [[tool.mypy.overrides]]
-module = ["nltk.*"]
+module = ["nltk.*", "pika.*"]
 follow_untyped_imports = true
 
 [tool.pylint.FORMAT]
