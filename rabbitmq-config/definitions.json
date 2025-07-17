@@ -1,0 +1,49 @@
+{
+    "users": [
+        {
+            "name": "rabbitmq-user",
+            "password": "rabbitmq-password",
+            "tags": "administrator"
+        }
+    ],
+    "vhosts": [
+        {
+            "name": "/"
+        }
+    ],
+    "permissions": [
+        {
+            "user": "rabbitmq-user",
+            "vhost": "/",
+            "configure": ".*",
+            "write": ".*",
+            "read": ".*"
+        }
+    ],
+    "queues": [
+        {
+            "name": "posts_queue",
+            "durable": true,
+            "auto_delete": false,
+            "vhost": "/"
+        }
+    ],
+    "exchanges": [
+        {
+            "name": "posts_exchange",
+            "type": "direct",
+            "durable": true,
+            "auto_delete": false,
+            "vhost": "/"
+        }
+    ],
+    "bindings": [
+        {
+            "source": "posts_exchange",
+            "destination": "posts_queue",
+            "destination_type": "queue",
+            "routing_key": "posts",
+            "vhost": "/"
+        }
+    ]
+}

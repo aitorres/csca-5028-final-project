@@ -5,7 +5,11 @@ Main entry point for the collector application.
 import asyncio
 import json
 import logging
+import os
 from typing import Any, Final, Optional
+
+import pika
+from pika.adapters.blocking_connection import BlockingChannel
 
 from websockets.asyncio.client import connect
 
@@ -25,6 +29,34 @@ VANCOUVER_FILTER_TERMS: Final[list[str]] = [
     "vancity",
     "vancouverbc",
 ]
+
+# RabbitMQ configuration
+RABBITMQ_HOST: Final[str] = os.environ["RABBITMQ_HOST"]
+RABBITMQ_PORT: Final[int] = int(os.environ["RABBITMQ_PORT"])
+RABBITMQ_USER: Final[str] = os.environ["RABBITMQ_USER"]
+RABBITMQ_PASSWORD: Final[str] = os.environ["RABBITMQ_PASSWORD"]
+RABBITMQ_QUEUE_NAME: Final[str] = os.environ["RABBITMQ_QUEUE_NAME"]
+RABBITMQ_EXCHANGE_NAME: Final[str] = os.environ["RABBITMQ_EXCHANGE_NAME"]
+
+
+def setup_queue() -> BlockingChannel:
+    """
+    Sets up the RabbitMQ queue for the collector application.
+    """
+
+    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
+    parameters = pika.ConnectionParameters(
+        host=RABBITMQ_HOST,
+        port=RABBITMQ_PORT,
+        credentials=credentials,
+    )
+
+    connection = pika.BlockingConnection(parameters)
+    channel = connection.channel()
+
+    channel.queue_declare(queue=RABBITMQ_QUEUE_NAME, durable=True)
+
+    return channel
 
 
 def parse_and_filter_record(message: str) -> Optional[dict[str, Any]]:
@@ -84,7 +116,7 @@ def filter_record_by_message(record: dict[str, Any]) -> Optional[dict[str, Any]]
     return None
 
 
-async def process_websocket_message(message: str) -> None:
+async def process_websocket_message(message: str, channel: pika.BlockingConnection) -> None:
     """
     Processes a message received from the WebSocket connection,
     which represents a Bluesky Jetstream event.
@@ -98,6 +130,16 @@ async def process_websocket_message(message: str) -> None:
         if filtered_record is not None:
             logger.info("Record related to Vancouver found: %s", filtered_record)
 
+            channel.basic_publish(
+                exchange=RABBITMQ_EXCHANGE_NAME,
+                routing_key=RABBITMQ_QUEUE_NAME,
+                body=json.dumps(filtered_record),
+                properties=pika.BasicProperties(
+                    delivery_mode=pika.DeliveryMode.Persistent,
+                )
+            )
+            logger.info("Record published to RabbitMQ queue '%s'.", RABBITMQ_QUEUE_NAME)
+
 
 async def main():
     """
@@ -106,6 +148,10 @@ async def main():
 
     logger.info("Starting the collector application...")
 
+    logger.info("Setting up RabbitMQ queue...")
+    channel = setup_queue()
+    logger.info("RabbitMQ queue '%s' is set up successfully.", RABBITMQ_QUEUE_NAME)
+
     logger.info("Connecting to WebSocket at %s...", BLUESKY_JETSTREAM_WEBSOCKET_URL)
     async with connect(BLUESKY_JETSTREAM_WEBSOCKET_URL) as websocket:
         logger.info("Connected to Bluesky Jetstream WebSocket!")
@@ -113,7 +159,7 @@ async def main():
         logger.info("Listening for messages from the WebSocket...")
         while True:
             message = await websocket.recv()
-            await process_websocket_message(message)
+            await process_websocket_message(message, channel)
 
 
 if __name__ == "__main__":
