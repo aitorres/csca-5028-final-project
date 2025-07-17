@@ -30,13 +30,15 @@ VANCOUVER_FILTER_TERMS: Final[list[str]] = [
     "vancouverbc",
 ]
 
-# RabbitMQ configuration
-RABBITMQ_HOST: Final[str] = os.environ["RABBITMQ_HOST"]
-RABBITMQ_PORT: Final[int] = int(os.environ["RABBITMQ_PORT"])
-RABBITMQ_USER: Final[str] = os.environ["RABBITMQ_USER"]
-RABBITMQ_PASSWORD: Final[str] = os.environ["RABBITMQ_PASSWORD"]
-RABBITMQ_QUEUE_NAME: Final[str] = os.environ["RABBITMQ_QUEUE_NAME"]
-RABBITMQ_EXCHANGE_NAME: Final[str] = os.environ["RABBITMQ_EXCHANGE_NAME"]
+# RabbitMQ configuration, default dummy values used on local tests
+# but all values are expected to be set in the environment
+# when deployed.
+RABBITMQ_HOST: Final[str] = os.environ.get("RABBITMQ_HOST", "localhost")
+RABBITMQ_PORT: Final[int] = int(os.environ.get("RABBITMQ_PORT", "5672"))
+RABBITMQ_USER: Final[str] = os.environ.get("RABBITMQ_USER", "guest")
+RABBITMQ_PASSWORD: Final[str] = os.environ.get("RABBITMQ_PASSWORD", "guest")
+RABBITMQ_QUEUE_NAME: Final[str] = os.environ.get("RABBITMQ_QUEUE_NAME", "queue")
+RABBITMQ_EXCHANGE_NAME: Final[str] = os.environ.get("RABBITMQ_EXCHANGE_NAME", "exchange")
 
 
 def setup_queue() -> BlockingChannel:
@@ -52,7 +54,7 @@ def setup_queue() -> BlockingChannel:
     )
 
     connection = pika.BlockingConnection(parameters)
-    channel = connection.channel()
+    channel: BlockingChannel = connection.channel()
 
     channel.queue_declare(queue=RABBITMQ_QUEUE_NAME, durable=True)
 
@@ -91,7 +93,7 @@ def parse_and_filter_record(message: str) -> Optional[dict[str, Any]]:
     return record
 
 
-def filter_record_by_message(record: dict[str, Any]) -> Optional[dict[str, Any]]:
+def filter_record_by_content(record: dict[str, Any]) -> Optional[dict[str, Any]]:
     """
     Given a Bluesky post record from the WebSocket connection,
     filters it to include only posts in English that are related
@@ -116,7 +118,27 @@ def filter_record_by_message(record: dict[str, Any]) -> Optional[dict[str, Any]]
     return None
 
 
-async def process_websocket_message(message: str, channel: pika.BlockingConnection) -> None:
+def transform_record_to_message(record: dict[str, Any]) -> str:
+    """
+    Transforms a Bluesky post record into a JSON string message
+    in the format expected by the RabbitMQ queue and in
+    contract with the other components of the application.
+
+    :param record: The Bluesky post record to transform.
+    :return: A JSON string representation of the record.
+    """
+
+    message: dict[str, str] = {
+        "source": "bluesky",
+        "type": "post",
+        "text": record["text"],
+        "createdAt": record["createdAt"],
+    }
+
+    return json.dumps(message, ensure_ascii=False)
+
+
+def process_websocket_event(message: str, channel: BlockingChannel) -> None:
     """
     Processes a message received from the WebSocket connection,
     which represents a Bluesky Jetstream event.
@@ -125,15 +147,16 @@ async def process_websocket_message(message: str, channel: pika.BlockingConnecti
     record = parse_and_filter_record(message)
 
     if record is not None:
-        filtered_record = filter_record_by_message(record)
+        filtered_record = filter_record_by_content(record)
 
         if filtered_record is not None:
-            logger.info("Record related to Vancouver found: %s", filtered_record)
+            message = transform_record_to_message(filtered_record)
+            logger.info("Record related to Vancouver found: %s", message)
 
             channel.basic_publish(
                 exchange=RABBITMQ_EXCHANGE_NAME,
                 routing_key=RABBITMQ_QUEUE_NAME,
-                body=json.dumps(filtered_record),
+                body=message,
                 properties=pika.BasicProperties(
                     delivery_mode=pika.DeliveryMode.Persistent,
                 )
@@ -159,7 +182,7 @@ async def main():
         logger.info("Listening for messages from the WebSocket...")
         while True:
             message = await websocket.recv()
-            await process_websocket_message(message, channel)
+            process_websocket_event(message, channel)
 
 
 if __name__ == "__main__":
