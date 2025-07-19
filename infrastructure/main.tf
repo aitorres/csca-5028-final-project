@@ -114,6 +114,11 @@ resource "azurerm_network_interface_security_group_association" "main" {
 
 
 // Virtual machine to host shared resources
+// NOTE: after first deployment, one manual step is required:
+// 1. SSH into the VM
+// 2. Connect to the database and create the user, database, password
+// 3. Run the migrations
+// 4. Configure RabbitMQ if needed
 resource "azurerm_linux_virtual_machine" "shared_vm" {
   name                = "shared-vm"
   resource_group_name = azurerm_resource_group.resource_group.name
