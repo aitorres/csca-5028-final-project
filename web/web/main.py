@@ -63,7 +63,7 @@ def get_posts() -> tuple[list[dict], int]:
             "sentiment": post[2],
             "inserted_at": post[3],
             "created_at": post[4],
-            "source": post[4]
+            "source": post[5]
         } for post in posts
     ], 200
 

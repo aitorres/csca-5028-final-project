@@ -78,7 +78,7 @@ resource "azurerm_container_app" "postgres_db" {
   }
 
   ingress {
-    external_enabled = false
+    external_enabled = true
     target_port      = 5432
     transport        = "auto"
 
@@ -132,6 +132,9 @@ resource "azurerm_container_app" "web_app" {
   }
 
   template {
+    min_replicas = 1
+    max_replicas = 1
+
     container {
       name   = "web"
       image  = "${azurerm_container_registry.container_registry.login_server}/web:${var.web_image_tag}"
@@ -145,7 +148,7 @@ resource "azurerm_container_app" "web_app" {
 
       env {
         name = "POSTGRESQL_URL"
-        value = "postgresql://${var.postgres_user}:${var.postgres_password}@${azurerm_container_app.postgres_db.name}.${azurerm_container_app_environment.production_env.default_domain}:5432/${var.postgres_db_name}"
+        value = "postgresql://${var.postgres_user}:${var.postgres_password}@${azurerm_container_app.postgres_db.ingress.fqdn}:5432/${var.postgres_db_name}"
       }
 
       liveness_probe {
