@@ -50,7 +50,7 @@ resource "azurerm_container_app" "postgres_db" {
 
     container {
       name = "postgres"
-      image = "mcr.microsoft.com/k8se/services/postgres:17"
+      image = "postgres:17"
       cpu    = "0.25"
       memory = "0.5Gi"
 
