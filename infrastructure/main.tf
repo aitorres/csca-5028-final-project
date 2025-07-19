@@ -24,7 +24,8 @@ resource "azurerm_public_ip" "shared_public_ip" {
   name                = "shared-public-ip"
   location            = azurerm_resource_group.resource_group.location
   resource_group_name = azurerm_resource_group.resource_group.name
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
 }
 
 resource "azurerm_network_interface" "external_shared_nic" {
