@@ -97,16 +97,11 @@ resource "azurerm_monitor_diagnostic_setting" "postgres_db_diagnostics" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.analytics_workspace.id
 
   enabled_log {
-    category = "ContainerAppConsoleLogs"
-  }
-
-  enabled_log {
     category = "ContainerAppSystemLogs"
   }
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
-    enabled  = true
   }
 }
 
@@ -180,15 +175,10 @@ resource "azurerm_monitor_diagnostic_setting" "web_app_diagnostics" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.analytics_workspace.id
 
   enabled_log {
-    category = "ContainerAppConsoleLogs"
-  }
-
-  enabled_log {
     category = "ContainerAppSystemLogs"
   }
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
-    enabled  = true
   }
 }
