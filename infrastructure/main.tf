@@ -41,18 +41,6 @@ resource "azurerm_network_interface" "external_shared_nic" {
   }
 }
 
-resource "azurerm_network_interface" "internal_shared_nic" {
-  name                = "internal-shared-nic"
-  location            = azurerm_resource_group.resource_group.location
-  resource_group_name = azurerm_resource_group.resource_group.name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.shared_subnet.id
-    private_ip_address_allocation = "Dynamic"
-  }
-}
-
 resource "azurerm_network_security_group" "shared_nsg" {
   name                = "shared-nsg"
   location            = azurerm_resource_group.resource_group.location
@@ -119,6 +107,11 @@ resource "azurerm_network_security_group" "shared_nsg" {
   }
 }
 
+resource "azurerm_network_interface_security_group_association" "main" {
+  network_interface_id      = azurerm_network_interface.external_shared_nic.id
+  network_security_group_id = azurerm_network_security_group.shared_nsg.id
+}
+
 
 // Virtual machine to host shared resources
 resource "azurerm_linux_virtual_machine" "shared_vm" {
@@ -132,8 +125,7 @@ resource "azurerm_linux_virtual_machine" "shared_vm" {
   disable_password_authentication = false
 
   network_interface_ids = [
-    azurerm_network_interface.external_shared_nic.id,
-    azurerm_network_interface.internal_shared_nic.id
+    azurerm_network_interface.external_shared_nic.id
   ]
 
   os_disk {
