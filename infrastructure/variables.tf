@@ -46,3 +46,9 @@ variable "sentry_dsn" {
   description = "The Sentry DSN for error tracking."
   type        = string
 }
+
+variable "shared_vm_admin_password" {
+  description = "The password for the shared VM admin user."
+  type        = string
+  sensitive   = true
+}
