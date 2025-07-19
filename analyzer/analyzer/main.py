@@ -10,10 +10,11 @@ from typing import Final
 
 import nltk
 import pika
+import psycopg2
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
 from pika.adapters.blocking_connection import BlockingChannel
 
 # Ensure NLTK resources are downloaded
@@ -31,6 +32,13 @@ RABBITMQ_USER: Final[str] = os.environ.get("RABBITMQ_USER", "guest")
 RABBITMQ_PASSWORD: Final[str] = os.environ.get("RABBITMQ_PASSWORD", "guest")
 RABBITMQ_QUEUE_NAME: Final[str] = os.environ.get("RABBITMQ_QUEUE_NAME", "queue")
 
+# PostgreSQL configuration, default dummy value used on local tests
+# but real value is expected to be set in the environment
+POSTGRESQL_URL: Final[str] = os.environ.get(
+    "POSTGRESQL_URL",
+    "postgresql://postgres:password@localhost:5432/mydatabase"
+)
+
 # Delay in seconds before polling the RabbitMQ queue
 POLLING_DELAY: Final[int] = 3
 
@@ -42,9 +50,21 @@ SENTIMENT_NEUTRAL: Final[str] = "neutral"
 SENTIMENT_NEGATIVE: Final[str] = "negative"
 
 
+def setup_database_connection() -> psycopg2.extensions.connection:
+    """
+    Sets up the database connection for the analyzer application.
+
+    :return: An SQLAlchemy Engine instance connected to the database.
+    """
+
+    return psycopg2.connect(POSTGRESQL_URL)
+
+
 def setup_queue() -> BlockingChannel:
     """
-    Sets up the RabbitMQ queue for the collector application.
+    Sets up the RabbitMQ queue for the analyzer application.
+
+    :return: A BlockingChannel instance connected to the RabbitMQ server.
     """
 
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
@@ -116,15 +136,17 @@ def analyze_sentiment(text: str) -> str:
     return SENTIMENT_NEUTRAL
 
 
-def process_queue_message(message: str) -> None:
+def process_queue_message(db: psycopg2.extensions.connection, message: str) -> None:
     """
     Given a message from the RabbitMQ queue,
     processes it by parsing the record, then performs
     NLP preprocessing and sentiment analysis and stores the result.
 
+    :param db_engine: The SQLAlchemy engine for database operations.
     :param message: The message received from the RabbitMQ queue.
     """
 
+    message = message.strip()
     if not message:
         return
 
@@ -140,12 +162,41 @@ def process_queue_message(message: str) -> None:
         logger.error("Record is not a dictionary: %s", record)
         return
 
+    if any(key not in record for key in ["text", "createdAt", "source"]):
+        logger.error("Record is missing required fields: %s", record)
+        return
+
     text = record["text"]
     preprocessed_text = preprocess_text(text)
     logger.info("Preprocessed text: %s", preprocessed_text)
 
     sentiment = analyze_sentiment(preprocessed_text)
     logger.info("Sentiment analysis result: %s", sentiment)
+
+    cursor = db.cursor()
+
+    try:
+        cursor.execute(
+            """
+            INSERT INTO posts (content, sentiment, created_at, source)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (
+                text,
+                sentiment,
+                record["createdAt"],
+                record["source"]
+            )
+        )
+        db.commit()
+    except psycopg2.Error as e:
+        logger.error("Database error occurred: %s", e)
+        db.rollback()
+        return
+    else:
+        logger.info("Sentiment analysis result stored in the database.")
+    finally:
+        cursor.close()
 
 
 async def main():
@@ -155,16 +206,19 @@ async def main():
 
     logger.info("Starting the analyzer application...")
 
+    logger.info("Setting up database engine...")
+    db = setup_database_connection()
+    logger.info("Database engine established successfully.")
+
     logger.info("Setting up RabbitMQ queue...")
     channel = setup_queue()
     logger.info("RabbitMQ queue '%s' is set up successfully.", RABBITMQ_QUEUE_NAME)
 
-    # Set up a RabbitMQ consumer
     logger.info("Setting up RabbitMQ consumer...")
     channel.basic_consume(
         queue=RABBITMQ_QUEUE_NAME,
         on_message_callback=lambda _ch, _m, _p, body: process_queue_message(
-            body.decode('utf-8')
+            db, body.decode('utf-8')
         ),
         auto_ack=True,
     )
