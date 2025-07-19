@@ -145,7 +145,7 @@ resource "azurerm_container_app" "web_app" {
 
       env {
         name = "POSTGRESQL_URL"
-        value = "postgresql://${var.postgres_user}:${var.postgres_password}@${azurerm_container_app.postgres_db.name}:5432/${var.postgres_db_name}"
+        value = "postgresql://${var.postgres_user}:${var.postgres_password}@${azurerm_container_app.postgres_db.name}.${azurerm_container_app_environment.production_env.default_domain}:5432/${var.postgres_db_name}"
       }
 
       liveness_probe {
