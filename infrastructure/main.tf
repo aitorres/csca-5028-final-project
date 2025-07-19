@@ -92,12 +92,16 @@ resource "azurerm_container_app" "postgres_db" {
 
 // Diagnostic settings for postgres container app
 resource "azurerm_monitor_diagnostic_setting" "postgres_db_diagnostics" {
-  name                       = "postgres-db-diagnostics"
-  target_resource_id         = azurerm_container_app.postgres_db.id
+  name                       = "production-diagnostics"
+  target_resource_id         = azurerm_container_app_environment.production_env.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.analytics_workspace.id
 
   enabled_log {
     category = "ContainerAppSystemLogs"
+  }
+
+  enabled_log {
+    category = "ContainerAppConsoleLogs"
   }
 
   enabled_metric {
@@ -165,20 +169,5 @@ resource "azurerm_container_app" "web_app" {
       percentage      = 100
       latest_revision = true
     }
-  }
-}
-
-// Diagnostic settings for web container app
-resource "azurerm_monitor_diagnostic_setting" "web_app_diagnostics" {
-  name                       = "web-app-diagnostics"
-  target_resource_id         = azurerm_container_app.web_app.id
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.analytics_workspace.id
-
-  enabled_log {
-    category = "ContainerAppSystemLogs"
-  }
-
-  enabled_metric {
-    category = "AllMetrics"
   }
 }
