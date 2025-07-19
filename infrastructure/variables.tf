@@ -25,3 +25,19 @@ variable "web_image_tag" {
   type        = string
   default     = "latest"
 }
+
+variable "postgres_user" {
+  description = "The username for the PostgreSQL database."
+  type        = string
+  default     = "postgres"
+}
+
+variable "postgres_password" {
+  description = "The password for the PostgreSQL database."
+  type        = string
+}
+
+variable "postgres_db_name" {
+  description = "The name of the PostgreSQL database."
+  type        = string
+}
