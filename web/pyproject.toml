@@ -24,6 +24,7 @@ black = "^25.1.0"
 mypy = "^1.16.1"
 pylint = "^3.3.7"
 isort = "^6.0.1"
+types-psycopg2 = "^2.9.21.20250718"
 
 [tool.isort]
 src_paths = ["web", "tests"]

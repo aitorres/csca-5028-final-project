@@ -19,7 +19,7 @@ POSTGRESQL_URL: Final[str] = os.environ.get(
 )
 
 app: Flask = Flask(__name__)
-db: Final[psycopg2.extensions.connection] = psycopg2.connect(POSTGRESQL_URL)
+db: psycopg2.extensions.connection = psycopg2.connect(POSTGRESQL_URL)
 
 
 @app.route("/api/posts", methods=["GET"])
