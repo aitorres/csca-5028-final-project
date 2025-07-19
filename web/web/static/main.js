@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
+  // Track if user is hovering over the table
+  let isHoveringTable = false;
+
   // Initialize DataTable
   const eventsTable = $('#eventsTable').DataTable({
     responsive: true,
@@ -13,15 +16,31 @@ document.addEventListener('DOMContentLoaded', function() {
     order: [[0, 'desc']], // Sort by date descending by default
     columnDefs: [
       {
+        targets: 0, // Date column
+        width: "20%"
+      },
+      {
+        targets: 1, // User column
+        width: "20%"
+      },
+      {
+        targets: 2, // Content column
+        width: "40%"
+      },
+      {
+        targets: 3, // Sentiment column
+        width: "20%"
+      },
+      {
         targets: 3, // Sentiment column
         render: function(data, type, row) {
           // Only apply the badge rendering for display
           if (type === 'display') {
             let badgeClass = 'bg-secondary';
             switch(data) {
-              case 'Positive': badgeClass = 'bg-success'; break;
-              case 'Neutral': badgeClass = 'bg-secondary'; break;
-              case 'Negative': badgeClass = 'bg-danger'; break;
+              case 'positive': badgeClass = 'bg-success'; break;
+              case 'neutral': badgeClass = 'bg-secondary'; break;
+              case 'negative': badgeClass = 'bg-danger'; break;
             }
             return `<span class="badge ${badgeClass}">${data}</span>`;
           }
@@ -57,6 +76,119 @@ document.addEventListener('DOMContentLoaded', function() {
     ],
     dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip'
   });
+
+  // Track table hover state
+  $('#eventsTable').on('mouseenter', function() {
+    isHoveringTable = true;
+  }).on('mouseleave', function() {
+    isHoveringTable = false;
+  });
+
+  // Function to show spinner overlay on table
+  function showTableSpinner() {
+    const tableWrapper = document.querySelector('#eventsTable_wrapper');
+    if (!document.querySelector('.table-spinner-overlay')) {
+      const spinnerOverlay = document.createElement('div');
+      spinnerOverlay.className = 'table-spinner-overlay';
+      spinnerOverlay.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      `;
+      spinnerOverlay.innerHTML = `
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      `;
+      tableWrapper.style.position = 'relative';
+      tableWrapper.appendChild(spinnerOverlay);
+    }
+  }
+
+  // Function to hide spinner overlay
+  function hideTableSpinner() {
+    const spinnerOverlay = document.querySelector('.table-spinner-overlay');
+    if (spinnerOverlay) {
+      spinnerOverlay.remove();
+    }
+  }
+
+  // Function to show confirmation message
+  function showConfirmationMessage(message = 'Table data refreshed successfully!') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-info alert-dismissible fade show';
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.innerHTML = `
+      <i class="fas fa-sync-alt me-2"></i>${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Insert the alert before the table card
+    const tableCard = document.querySelector('.card');
+    tableCard.parentNode.insertBefore(alertDiv, tableCard);
+
+    // Remove the alert after 5 seconds
+    setTimeout(() => {
+      alertDiv.classList.remove('show');
+      setTimeout(() => alertDiv.remove(), 150);
+    }, 5000);
+  }
+
+  // Function to fetch and update table data
+  async function refreshTableData() {
+    // Don't refresh if user is hovering over the table
+    if (isHoveringTable) {
+      return;
+    }
+
+    try {
+      showTableSpinner();
+
+      const response = await fetch('/api/posts');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const posts = await response.json();
+
+      // Clear existing table data
+      eventsTable.clear();
+
+      // Add new data to table
+      posts.forEach(post => {
+        eventsTable.row.add([
+          post.created_at || new Date().toISOString(),
+          post.source || 'Unknown',
+          post.text || '',
+          post.sentiment || 'Unknown'
+        ]);
+      });
+
+      // Redraw the table
+      eventsTable.draw();
+
+      hideTableSpinner();
+      showConfirmationMessage();
+
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      hideTableSpinner();
+      showConfirmationMessage('Failed to refresh table data. Please try again.');
+    }
+  }
+
+  // Load data on page load
+  refreshTableData();
+
+  // Set up auto-refresh every 30 seconds
+  setInterval(refreshTableData, 30000);
 
   // Form validation
   const entryForm = document.querySelector('#addEventModal form');

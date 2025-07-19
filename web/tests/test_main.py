@@ -41,3 +41,7 @@ def test_health_check_route(web_client) -> None:
     response = web_client.get('/health')
     assert response.status_code == 200
     assert response.get_data(as_text=True) == "ok"
+
+    response = web_client.get('/api/health')
+    assert response.status_code == 200
+    assert response.get_data(as_text=True) == "ok"
