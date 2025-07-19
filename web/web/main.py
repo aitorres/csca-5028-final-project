@@ -19,7 +19,20 @@ POSTGRESQL_URL: Final[str] = os.environ.get(
 )
 
 app: Flask = Flask(__name__)
-db: psycopg2.extensions.connection = psycopg2.connect(POSTGRESQL_URL)
+
+
+def get_db_connection() -> psycopg2.extensions.connection:
+    """
+    Get or create the database connection.
+
+    This function ensures that the database connection is established
+    only once per hour and reused for subsequent requests, and also that
+    we can run unit tests without needing a real database connection.
+
+    :return: A psycopg2 connection object to the PostgreSQL database.
+    """
+
+    return psycopg2.connect(POSTGRESQL_URL)
 
 
 @app.route("/api/posts", methods=["GET"])
@@ -31,6 +44,7 @@ def get_posts() -> tuple[list[dict], int]:
 
     logger.info("Posts API route accessed")
 
+    db = get_db_connection()
     cursor = db.cursor()
     cursor.execute(
         """
