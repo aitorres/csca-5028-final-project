@@ -45,14 +45,14 @@ resource "azurerm_container_app" "postgres_db" {
   }
 
   template {
+    min_replicas = 1
+    max_replicas = 1
+
     container {
       name = "postgres"
       image = "mcr.microsoft.com/k8se/services/postgres:17"
       cpu    = "0.25"
       memory = "0.5Gi"
-
-      min_replicas = 1
-      max_replicas = 1
 
       liveness_probe {
         initial_delay           = 30
