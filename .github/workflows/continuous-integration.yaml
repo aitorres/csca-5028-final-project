@@ -117,6 +117,9 @@ jobs:
       TF_VAR_postgres_db_name: ${{ secrets.POSTGRES_DB_NAME }}
       TF_VAR_shared_vm_admin_password: ${{ secrets.SHARED_VM_ADMIN_PASSWORD }}
       TF_VAR_sentry_dsn: ${{ secrets.SENTRY_DSN }}
+      TF_VAR_rabbitmq_user : ${{ secrets.RABBITMQ_USER }}
+      TF_VAR_rabbitmq_password : ${{ secrets.RABBITMQ_PASSWORD }}
+      TF_VAR_rabbitmq_queue_name : ${{ secrets.RABBITMQ_QUEUE_NAME }}
       TF_VAR_web_image_tag: ${{ needs.build_web.outputs.web_hash }}
 
     outputs:

@@ -52,3 +52,19 @@ variable "shared_vm_admin_password" {
   type        = string
   sensitive   = true
 }
+
+variable "rabbitmq_user" {
+  description = "The username for RabbitMQ."
+  type        = string
+}
+
+variable "rabbitmq_password" {
+  description = "The password for RabbitMQ."
+  type        = string
+  sensitive   = true
+}
+
+variable "rabbitmq_queue_name" {
+  description = "The name of the RabbitMQ queue."
+  type        = string
+}
