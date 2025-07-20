@@ -121,6 +121,8 @@ jobs:
       TF_VAR_rabbitmq_password : ${{ secrets.RABBITMQ_PASSWORD }}
       TF_VAR_rabbitmq_queue_name : ${{ secrets.RABBITMQ_QUEUE_NAME }}
       TF_VAR_web_image_tag: ${{ needs.build_web.outputs.web_hash }}
+      TF_VAR_collector_image_tag: ${{ needs.build_collector.outputs.collector_hash }}
+      TF_VAR_analyzer_image_tag: ${{ needs.build_analyzer.outputs.analyzer_hash }}
 
     outputs:
       web_app_url: ${{ steps.output_web_app_url.outputs.web_app_url }}

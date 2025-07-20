@@ -26,6 +26,18 @@ variable "web_image_tag" {
   default     = "latest"
 }
 
+variable "collector_image_tag" {
+  description = "The tag for the collector Docker image."
+  type        = string
+  default     = "latest"
+}
+
+variable "analyzer_image_tag" {
+  description = "The tag for the analyzer Docker image."
+  type        = string
+  default     = "latest"
+}
+
 variable "postgres_user" {
   description = "The username for the PostgreSQL database."
   type        = string

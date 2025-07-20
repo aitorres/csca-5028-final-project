@@ -279,6 +279,82 @@ resource "azurerm_container_app" "web_app" {
         port                    = 8080
       }
     }
+
+    container {
+      name   = "analyzer"
+      image  = "${azurerm_container_registry.container_registry.login_server}/analyzer:${var.web_image_tag}"
+      cpu    = "0.25"
+      memory = "0.5Gi"
+
+      env {
+        name  = "ENVIRONMENT"
+        value = "production"
+      }
+      env {
+        name  = "SENTRY_DSN"
+        value = var.sentry_dsn
+      }
+      env {
+        name  = "POSTGRESQL_URL"
+        value = "postgresql://${var.postgres_user}:${var.postgres_password}@${azurerm_linux_virtual_machine.shared_vm.public_ip_address}:5432/${var.postgres_db_name}"
+      }
+      env {
+        name  = "RABBITMQ_HOST"
+        value = azurerm_linux_virtual_machine.shared_vm.public_ip_address
+      }
+      env {
+        name  = "RABBITMQ_PORT"
+        value = "5672"
+      }
+      env {
+        name  = "RABBITMQ_USER"
+        value = var.rabbitmq_user
+      }
+      env {
+        name  = "RABBITMQ_PASSWORD"
+        value = var.rabbitmq_password
+      }
+      env {
+        name  = "RABBITMQ_QUEUE_NAME"
+        value = var.rabbitmq_queue_name
+      }
+    }
+
+    container {
+      name   = "collector"
+      image  = "${azurerm_container_registry.container_registry.login_server}/collector:${var.web_image_tag}"
+      cpu    = "0.25"
+      memory = "0.5Gi"
+
+      env {
+        name  = "ENVIRONMENT"
+        value = "production"
+      }
+      env {
+        name  = "SENTRY_DSN"
+        value = var.sentry_dsn
+      }
+      env {
+        name  = "RABBITMQ_HOST"
+        value = azurerm_linux_virtual_machine.shared_vm.public_ip_address
+      }
+      env {
+        name  = "RABBITMQ_PORT"
+        value = "5672"
+      }
+      env {
+        name  = "RABBITMQ_USER"
+        value = var.rabbitmq_user
+      }
+      env {
+        name  = "RABBITMQ_PASSWORD"
+        value = var.rabbitmq_password
+      }
+      env {
+        name  = "RABBITMQ_QUEUE_NAME"
+        value = var.rabbitmq_queue_name
+      }
+    }
   }
 
   ingress {
