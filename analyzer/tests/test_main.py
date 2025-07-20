@@ -24,6 +24,9 @@ from analyzer.main import (
         ("123 numbers should be ignored.", False),
         ("This phrase has a bad word: porn.", True),
         ("This phrase has a bad word: p0rn and damn.", True),
+        ("THIS PHRASE IS OKAY", False),
+        ("this phrase has an UPPSER CASE bad word: DAMN", True),
+        ("Mixing case: dAmN is bad", True),
     ]
 )
 def test_check_for_bad_words(input_text: str, is_bad_word_expected: bool) -> None:

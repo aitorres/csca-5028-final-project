@@ -72,7 +72,7 @@ def load_bad_word_pattern() -> re.Pattern:
         bad_words = [line.strip() for line in bad_words_file if line.strip()]
 
     pattern = '|'.join(bad_words)
-    return re.compile(pattern)
+    return re.compile(pattern, re.IGNORECASE)
 
 
 def setup_database_connection() -> psycopg2.extensions.connection:
