@@ -34,7 +34,6 @@ def test_check_for_bad_words(input_text: str, is_bad_word_expected: bool) -> Non
     assert check_for_bad_words(input_text) == is_bad_word_expected
 
 
-
 @pytest.mark.parametrize(
     "input_text, expected_output",
     [
@@ -87,9 +86,21 @@ def test_analyze_sentiment(input_text: str, expected_output: str) -> None:
         ("invalid json", False),
         ("[]", False),
         ("{}", False),
-        ('{"text": "This is a test post", "createdAt": "2023-10-01T12:00:00Z", "source": "bluesky"}', True),
-        ('{"text": "Another post", "createdAt": "2023-10-01T12:00:00Z", "source": "bluesky"}', True),
-        ('{"text": "Yet another post", "createdAt": "2023-10-01T12:00:00Z", "source": "bluesky"}', True),
+        (
+            '{"text": "This is a test post", "createdAt": "2023-10-01T12:00:00Z", '
+            '"source": "bluesky"}',
+            True
+        ),
+        (
+            '{"text": "Another post", "createdAt": "2023-10-01T12:00:00Z", '
+            '"source": "bluesky"}',
+            True
+        ),
+        (
+            '{"text": "Yet another post", "createdAt": "2023-10-01T12:00:00Z", '
+            '"source": "bluesky"}',
+            True
+        ),
     ]
 )
 def test_process_queue_message(mocker, message: str, is_valid_message: bool) -> None:
@@ -114,18 +125,18 @@ def test_process_queue_message(mocker, message: str, is_valid_message: bool) -> 
     # Call the function under test
     process_queue_message(mock_db, message)
 
+    # If the message is invalid, ensure no SQL execution occurs
     if not is_valid_message:
-        # If the message is invalid, ensure no SQL execution occurs
         mock_cursor.execute.assert_not_called()
         return
-    else:
-        # If the message is valid, ensure SQL execution occurs
-        mock_cursor.execute.assert_called_once()
-        args, _ = mock_cursor.execute.call_args
-        assert "INSERT INTO posts (content, sentiment, created_at, source)" in args[0]
-        assert "VALUES" in args[0]
 
-        parsed_message = json.loads(message)
-        assert args[1][0] == parsed_message["text"]
-        assert args[1][2] == parsed_message["createdAt"]
-        assert args[1][3] == parsed_message["source"]
+    # If the message is valid, ensure SQL execution occurs
+    mock_cursor.execute.assert_called_once()
+    args, _ = mock_cursor.execute.call_args
+    assert "INSERT INTO posts (content, sentiment, created_at, source)" in args[0]
+    assert "VALUES" in args[0]
+
+    parsed_message = json.loads(message)
+    assert args[1][0] == parsed_message["text"]
+    assert args[1][2] == parsed_message["createdAt"]
+    assert args[1][3] == parsed_message["source"]

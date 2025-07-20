@@ -51,8 +51,8 @@ SENTIMENT_POSITIVE: Final[str] = "positive"
 SENTIMENT_NEUTRAL: Final[str] = "neutral"
 SENTIMENT_NEGATIVE: Final[str] = "negative"
 
-# List taken from `mogade`'s Github repository under a Creative Commons Attribution license
-# Used for quickly filtering out certain bad words
+# List taken from `mogade`'s Github repository under a Creative Commons Attribution
+# license. Used for quickly filtering out certain bad words
 BAD_WORDS_FILE: Final[str] = os.path.join(
     Path(os.path.dirname(__file__)).parent,
     "resources",
@@ -68,7 +68,7 @@ def load_bad_word_pattern() -> re.Pattern:
     :return: A regex patterns that matches on presence of a bad word.
     """
 
-    with open(BAD_WORDS_FILE, "r") as bad_words_file:
+    with open(BAD_WORDS_FILE, "r", encoding="utf-8") as bad_words_file:
         bad_words = [line.strip() for line in bad_words_file if line.strip()]
 
     pattern = '|'.join(bad_words)
