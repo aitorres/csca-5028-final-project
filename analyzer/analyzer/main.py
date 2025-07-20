@@ -6,6 +6,8 @@ import asyncio
 import json
 import logging
 import os
+import re
+from pathlib import Path
 from typing import Final
 
 import nltk
@@ -48,6 +50,29 @@ SENTIMENT_THRESHOLD: Final[float] = 0.40
 SENTIMENT_POSITIVE: Final[str] = "positive"
 SENTIMENT_NEUTRAL: Final[str] = "neutral"
 SENTIMENT_NEGATIVE: Final[str] = "negative"
+
+# List taken from `mogade`'s Github repository under a Creative Commons Attribution license
+# Used for quickly filtering out certain bad words
+BAD_WORDS_FILE: Final[str] = os.path.join(
+    Path(os.path.dirname(__file__)).parent,
+    "resources",
+    "bad_words.txt"
+)
+
+
+def load_bad_word_pattern() -> re.Pattern:
+    """
+    Load bad word patterns from a file and compile into
+    a single regex pattern.
+
+    :return: A regex patterns that matches on presence of a bad word.
+    """
+
+    with open(BAD_WORDS_FILE, "r") as bad_words_file:
+        bad_words = [line.strip() for line in bad_words_file if line.strip()]
+
+    pattern = '|'.join(bad_words)
+    return re.compile(pattern)
 
 
 def setup_database_connection() -> psycopg2.extensions.connection:
@@ -136,6 +161,19 @@ def analyze_sentiment(text: str) -> str:
     return SENTIMENT_NEUTRAL
 
 
+def check_for_bad_words(text: str) -> bool:
+    """
+    Checks if the given text contains any bad words.
+
+    :param text: The input text to check.
+    :return: True if bad words are found, False otherwise.
+    """
+
+    bad_words_pattern = load_bad_word_pattern()
+
+    return bool(re.search(bad_words_pattern, text))
+
+
 def process_queue_message(db: psycopg2.extensions.connection, message: str) -> None:
     """
     Given a message from the RabbitMQ queue,
@@ -167,6 +205,12 @@ def process_queue_message(db: psycopg2.extensions.connection, message: str) -> N
         return
 
     text = record["text"]
+
+    has_bad_words = check_for_bad_words(text)
+    if has_bad_words:
+        logger.warning("Message contains bad words, skipping processing: %s", text)
+        return
+
     preprocessed_text = preprocess_text(text)
     logger.info("Preprocessed text: %s", preprocessed_text)
 

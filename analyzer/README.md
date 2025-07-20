@@ -1,0 +1,1 @@
+Bad words filtering list taken from `mogade`'s Github repository: https://github.com/mogade/badwords under a Creative Commons Attribution license.

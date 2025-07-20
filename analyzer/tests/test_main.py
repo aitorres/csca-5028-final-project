@@ -6,7 +6,33 @@ import json
 
 import pytest
 
-from analyzer.main import analyze_sentiment, preprocess_text, process_queue_message
+from analyzer.main import (
+    analyze_sentiment,
+    check_for_bad_words,
+    preprocess_text,
+    process_queue_message,
+)
+
+
+@pytest.mark.parametrize(
+    "input_text, is_bad_word_expected",
+    [
+        ("This is a test.", False),
+        ("This example has PUNCTUATION!", False),
+        ("Another example, with some stop words.", False),
+        ("  Leading and trailing spaces.  ", False),
+        ("123 numbers should be ignored.", False),
+        ("This phrase has a bad word: porn.", True),
+        ("This phrase has a bad word: p0rn and damn.", True),
+    ]
+)
+def test_check_for_bad_words(input_text: str, is_bad_word_expected: bool) -> None:
+    """
+    Unit tests to ensure bad word filtering is working as expected.
+    """
+
+    assert check_for_bad_words(input_text) == is_bad_word_expected
+
 
 
 @pytest.mark.parametrize(
