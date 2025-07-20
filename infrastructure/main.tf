@@ -282,7 +282,7 @@ resource "azurerm_container_app" "web_app" {
 
     container {
       name   = "analyzer"
-      image  = "${azurerm_container_registry.container_registry.login_server}/analyzer:${var.web_image_tag}"
+      image  = "${azurerm_container_registry.container_registry.login_server}/analyzer:${var.analyzer_image_tag}"
       cpu    = "0.25"
       memory = "0.5Gi"
 
@@ -322,7 +322,7 @@ resource "azurerm_container_app" "web_app" {
 
     container {
       name   = "collector"
-      image  = "${azurerm_container_registry.container_registry.login_server}/collector:${var.web_image_tag}"
+      image  = "${azurerm_container_registry.container_registry.login_server}/collector:${var.collector_image_tag}"
       cpu    = "0.25"
       memory = "0.5Gi"
 
