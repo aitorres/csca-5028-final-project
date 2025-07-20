@@ -52,6 +52,8 @@ j[i1][s\$z][s\$z]?m?
 [ck][o0]ndum[s\$]?
 mast(e|ur)b(8|ait|ate)
 n+[i1]+[gq]+[e3]*r+[s\$]*
+nsfw
+nowplaying
 [o0]rg[a@][s\$][i1]m[s\$]?
 [o0]rg[a@][s\$]m[s\$]?
 p[e3]nn?[i1][s\$]
@@ -67,5 +69,6 @@ pu[s\$][s\$]y[s\$]?
 [s\$]h[i1][t\+][s\$]?
 [s\$][l1]u[t\+][s\$]?
 [s\$]mu[t\+][s\$]?
+spicyvr
 [s\$]punk[s\$]?
 [t\+]w[a@][t\+][s\$]?
