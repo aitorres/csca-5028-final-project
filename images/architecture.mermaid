@@ -1,0 +1,31 @@
+graph TD
+    subgraph Communication layer
+        queue[Message queue]
+    end
+
+    subgraph Data Store
+        db[(Database)]
+    end
+
+    subgraph Data analysis
+        analyzer
+    end
+    subgraph Data collection
+        collector
+    end
+
+    subgraph Application front-end
+        web --adds user-submitted posts to queue--> queue[Message queue]
+        db --front-end gets posts for display and statistics--> web
+        queue --sends posts for analysis--> analyzer[Post Analyzer]
+        analyzer --processes posts and inserts into database--> db
+        collector[Social Media Collector] --filters posts and adds to queue--> queue
+    end
+
+    subgraph Bluesky
+        bs[Bluesky Post Stream] --publishes new posts via web socket-->  collector
+    end
+
+        subgraph User
+        user[User-submitted content] --content submitted to web api--> web[Website]
+    end
