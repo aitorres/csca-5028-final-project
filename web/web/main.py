@@ -35,11 +35,28 @@ def get_db_connection() -> psycopg2.extensions.connection:
     return psycopg2.connect(POSTGRESQL_URL)
 
 
+@app.route("/api/posts/count", methods=["GET"])
+def get_post_count() -> tuple[dict, int]:
+    """
+    API route to retrieve the total number of posts, useful
+    for the front-end to notify users about new available posts.
+    """
+
+    logger.info("Post count API route accessed")
+
+    db = get_db_connection()
+    cursor = db.cursor()
+    cursor.execute("SELECT COUNT(*) FROM posts")
+    count = cursor.fetchone()[0]
+    cursor.close()
+
+    return {"count": count}, 200
+
+
 @app.route("/api/posts", methods=["GET"])
 def get_posts() -> tuple[list[dict], int]:
     """
     API route to retrieve posts.
-    This is a placeholder implementation.
     """
 
     logger.info("Posts API route accessed")
