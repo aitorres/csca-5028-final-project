@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
 
     // Insert the alert before the table card
-    const tableCard = document.querySelector('.card');
+    const tableCard = document.querySelector('#postsCard');
     tableCard.parentNode.insertBefore(alertDiv, tableCard);
 
     // Remove the alert after 5 seconds
