@@ -2,6 +2,7 @@
 Unit tests for the web application's main module.
 """
 
+import json
 from typing import Generator
 
 import pytest
@@ -136,6 +137,36 @@ def test_get_posts_api(mocker, web_client) -> None:
         """
     )
     mock_cursor.close.assert_called_once()
+
+
+def test_create_post_route(mocker, web_client) -> None:
+    """
+    Tests the create post route of the web application.
+
+    Since this API endpoint makes a call to the message queue,
+    we mock the queue connection and use a spy to assert
+    we are making the expected calls.
+    """
+
+    mock_channel = mocker.MagicMock()
+    mocker.patch('web.main.get_queue', return_value=mock_channel)
+
+    response = web_client.post(
+        '/api/posts',
+        json={
+            "content": "This is a test post",
+        }
+    )
+    assert response.status_code == 201
+    assert response.get_json() == {"message": "Post created successfully"}
+
+    mock_channel.basic_publish.assert_called_once()
+    _, kwargs = mock_channel.basic_publish.call_args
+    assert kwargs["exchange"] == ''
+    assert kwargs["routing_key"] == 'queue'
+    assert json.loads(kwargs["body"])["text"] == "This is a test post"
+    assert json.loads(kwargs["body"])["source"] == "user"
+
 
 
 def test_get_post_source_statistics(mocker, web_client) -> None:

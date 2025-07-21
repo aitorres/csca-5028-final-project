@@ -2,14 +2,30 @@
 Main entry point for the web application.
 """
 
-import os
+import json
 import logging
+import os
+from datetime import datetime, timezone
 from typing import Final
 
+import pika
 import psycopg2
 from flask import Flask, render_template, request
+from pika.adapters.blocking_connection import BlockingChannel
 
 logger = logging.getLogger(__name__)
+
+# RabbitMQ configuration, default dummy values used on local tests
+# but all values are expected to be set in the environment
+# when deployed.
+RABBITMQ_HOST: Final[str] = os.environ.get("RABBITMQ_HOST", "localhost")
+RABBITMQ_PORT: Final[int] = int(os.environ.get("RABBITMQ_PORT", "5672"))
+RABBITMQ_USER: Final[str] = os.environ.get("RABBITMQ_USER", "guest")
+RABBITMQ_PASSWORD: Final[str] = os.environ.get("RABBITMQ_PASSWORD", "guest")
+RABBITMQ_QUEUE_NAME: Final[str] = os.environ.get("RABBITMQ_QUEUE_NAME", "queue")
+
+# Constant for sending posts to the analyzer service
+SUBMITTED_POST_SOURCE: Final[str] = "user"
 
 # PostgreSQL configuration, default dummy value used on local tests
 # but real value is expected to be set in the environment
@@ -19,6 +35,28 @@ POSTGRESQL_URL: Final[str] = os.environ.get(
 )
 
 app: Flask = Flask(__name__)
+
+
+def get_queue() -> BlockingChannel:
+    """
+    Sets up the RabbitMQ queue for the analyzer application.
+
+    :return: A BlockingChannel instance connected to the RabbitMQ server.
+    """
+
+    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
+    parameters = pika.ConnectionParameters(
+        host=RABBITMQ_HOST,
+        port=RABBITMQ_PORT,
+        credentials=credentials,
+    )
+
+    connection = pika.BlockingConnection(parameters)
+    channel: BlockingChannel = connection.channel()
+
+    channel.queue_declare(queue=RABBITMQ_QUEUE_NAME, durable=True)
+
+    return channel
 
 
 def get_db_connection() -> psycopg2.extensions.connection:
@@ -52,6 +90,50 @@ def get_post_count() -> tuple[dict, int]:
     cursor.close()
 
     return {"count": count}, 200
+
+
+@app.route("/api/posts", methods=["POST"])
+def create_post() -> tuple[dict, int]:
+    """
+    API route to create a new post.
+    Expects a JSON payload with 'content' field, and all other fields
+    are set on the back-end.
+
+    If valid, data is sent through RabbitMQ to the analyzer service
+    for sentiment analysis and storage in the database.
+
+    :return: A dictionary with  a success message.
+    """
+
+    logger.info("Create post API route accessed")
+
+    data = request.get_json()
+    if not data or "content" not in data:
+        return {"error": "Invalid request, 'content' field is required"}, 400
+
+    # Extracting content and populating other fields
+    text = data["content"].strip()
+    if not text:
+        return {"error": "Content cannot be empty"}, 400
+
+    created_at = datetime.now(timezone.utc)
+
+    post_data = {
+        "text": text,
+        "createdAt": created_at.isoformat(),
+        "source": SUBMITTED_POST_SOURCE
+    }
+    channel = get_queue()
+    channel.basic_publish(
+        exchange='',
+        routing_key=RABBITMQ_QUEUE_NAME,
+        body=json.dumps(post_data),
+        properties=pika.BasicProperties(
+            delivery_mode=pika.DeliveryMode.Persistent,
+        )
+    )
+
+    return {"message": "Post created successfully"}, 201
 
 
 @app.route("/api/posts", methods=["GET"])

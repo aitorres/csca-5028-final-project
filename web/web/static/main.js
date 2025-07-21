@@ -155,16 +155,14 @@ document.addEventListener('DOMContentLoaded', function() {
       {
         targets: 0, // Date column
         render: function(data, type, row) {
-          // Format for display but keep ISO for sorting
-          if (type === 'display' || type === 'filter') {
-            const date = new Date(data);
-            return date.toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            });
-          }
-          return data;
+          const date = new Date(data);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
         }
       }
     ],
@@ -332,38 +330,48 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!entryForm.checkValidity()) {
         entryForm.classList.add('was-validated');
       } else {
-        // Get form values
-        const user = document.getElementById('entryUser').value;
+        // Get form content
         const content = document.getElementById('entryContent').value;
 
-        const currentDate = new Date();
-        const formattedDate = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        // Send to the API
+        const postData = {
+          content: content
+        };
 
-        // TODO: submit to API
+        fetch('/api/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(postData)
+        })
+        .then(response => {
+          if (!response.ok) {
+            // Let the user know if there was an error
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
 
-        // Create a success alert
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-success alert-dismissible fade show';
-        alertDiv.setAttribute('role', 'alert');
-        alertDiv.innerHTML = `
-          <strong>Success!</strong> Your post has been submitted for analysis, it will be added to the table as soon as the analysis completes.
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
+          return response.json();
+        })
+        .then(data => {
+          showConfirmationMessage(
+            `<strong>Success!</strong> Your post has been submitted for analysis, once analysis completes you will see a notification to refresh the table.`
+          )
 
-        // Insert the alert before the table
-        const tableCard = document.querySelector('.card');
-        tableCard.parentNode.insertBefore(alertDiv, tableCard);
+          entryForm.reset();
+          const modal = bootstrap.Modal.getInstance(document.querySelector('#addEventModal'));
+          modal.hide();
+        })
+        .catch(error => {
+          console.error('Error submitting post:', error);
+          showConfirmationMessage(
+            `<strong>Error!</strong> There was an issue submitting your post. Please try again later.`
+          );
 
-        // Reset the form and close the modal
-        entryForm.reset();
-        const modal = bootstrap.Modal.getInstance(document.querySelector('#addEventModal'));
-        modal.hide();
-
-        // Remove the alert after 5 seconds
-        setTimeout(() => {
-          alertDiv.classList.remove('show');
-          setTimeout(() => alertDiv.remove(), 150);
-        }, 5000);
+          entryForm.reset();
+          const modal = bootstrap.Modal.getInstance(document.querySelector('#addEventModal'));
+          modal.hide();
+        });
       }
     });
   }
