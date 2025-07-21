@@ -84,17 +84,17 @@ def test_filter_record_by_message(
     [
         (
             {"text": "This is a Vancouver post", "createdAt": "2023-10-01T12:00:00Z"},
-            '{"source": "bluesky", "type": "post", "text": "This is a Vancouver post", '
+            '{"source": "bluesky", "text": "This is a Vancouver post", '
             '"createdAt": "2023-10-01T12:00:00Z"}'
         ),
         (
             {"text": "Vancouver is great!", "createdAt": "2023-10-01T12:00:00Z"},
-            '{"source": "bluesky", "type": "post", "text": "Vancouver is great!", '
+            '{"source": "bluesky", "text": "Vancouver is great!", '
             '"createdAt": "2023-10-01T12:00:00Z"}'
         ),
         (
             {"text": "YVR is the best airport", "createdAt": "2023-10-01T12:00:00Z"},
-            '{"source": "bluesky", "type": "post", "text": "YVR is the best airport", '
+            '{"source": "bluesky", "text": "YVR is the best airport", '
             '"createdAt": "2023-10-01T12:00:00Z"}'
         ),
     ]
@@ -126,7 +126,7 @@ def test_transform_record_to_message(
             '{"commit": {"record": {"$type": "app.bsky.feed.post", '
             '"text": "This is a Vancouver post", "createdAt": "2023-10-01T12:00:00Z"}}}',
             True,
-            '{"source": "bluesky", "type": "post", "text": "This is a Vancouver post", '
+            '{"source": "bluesky", "text": "This is a Vancouver post", '
             '"createdAt": "2023-10-01T12:00:00Z"}'
         ),
         (
@@ -139,7 +139,7 @@ def test_transform_record_to_message(
             '{"commit": {"record": {"$type": "app.bsky.feed.post", '
             '"text": "Vancouver is great!", "createdAt": "2023-10-01T12:00:00Z"}}}',
             True,
-            '{"source": "bluesky", "type": "post", "text": "Vancouver is great!", '
+            '{"source": "bluesky", "text": "Vancouver is great!", '
             '"createdAt": "2023-10-01T12:00:00Z"}'
         ),
         (
@@ -152,7 +152,7 @@ def test_transform_record_to_message(
             '{"commit": {"record": {"$type": "app.bsky.feed.post", '
             '"text": "YVR is the best airport", "createdAt": "2023-10-01T12:00:00Z"}}}',
             True,
-            '{"source": "bluesky", "type": "post", "text": "YVR is the best airport", '
+            '{"source": "bluesky", "text": "YVR is the best airport", '
             '"createdAt": "2023-10-01T12:00:00Z"}'
         ),
     ]

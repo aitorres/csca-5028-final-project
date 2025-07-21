@@ -168,7 +168,6 @@ def test_create_post_route(mocker, web_client) -> None:
     assert json.loads(kwargs["body"])["source"] == "user"
 
 
-
 def test_get_post_source_statistics(mocker, web_client) -> None:
     """
     Tests the post source statistics API route of the web application.

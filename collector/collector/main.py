@@ -129,7 +129,6 @@ def transform_record_to_message(record: dict[str, Any]) -> str:
 
     message: dict[str, str] = {
         "source": "bluesky",
-        "type": "post",
         "text": record["text"],
         "createdAt": record["createdAt"],
     }

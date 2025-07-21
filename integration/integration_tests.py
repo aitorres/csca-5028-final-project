@@ -45,17 +45,22 @@ data = {
 try:
     req = urllib.request.Request(
         LOCALHOST_URL + "/api/posts",
-        data=urllib.parse.urlencode(data).encode(),
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        data=json.dumps(data).encode('utf-8'),
+        headers={"Content-Type": "application/json"},
+        method="POST"
     )
     response = urllib.request.urlopen(req)
     if response.status == 201:
         print("Post submitted successfully.")
     else:
         print(f"Failed to submit post, status code: {response.status}")
+        print("Response:", response.read().decode('utf-8'))
         sys.exit(1)
-except urllib.error.URLError as e:
+except urllib.error.HTTPError as e:
     print(f"Error submitting post: {e.reason}")
+    print("Error response content:", e.read().decode('utf-8'))
+    print("Retrieving web service logs for debugging...")
+    os.system("docker compose logs web --tail=10")
     sys.exit(1)
 
 # Wait for a while to ensure the post is processed

@@ -107,13 +107,20 @@ def create_post() -> tuple[dict, int]:
 
     logger.info("Create post API route accessed")
 
-    data = request.get_json()
+    try:
+        data = request.get_json()
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON payload received")
+        return {"error": "Invalid JSON payload"}, 400
+
     if not data or "content" not in data:
+        logger.warning("Invalid request, 'content' field is required")
         return {"error": "Invalid request, 'content' field is required"}, 400
 
     # Extracting content and populating other fields
     text = data["content"].strip()
     if not text:
+        logger.warning("Content cannot be empty")
         return {"error": "Content cannot be empty"}, 400
 
     created_at = datetime.now(timezone.utc)
@@ -133,6 +140,7 @@ def create_post() -> tuple[dict, int]:
         )
     )
 
+    logger.info("Post submitted for analysis: %s", post_data["text"])
     return {"message": "Post created successfully"}, 201
 
 
