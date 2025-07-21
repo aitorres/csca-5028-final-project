@@ -121,6 +121,10 @@ def test_check_if_text_exists(mocker) -> None:
         ("[]", False),
         ("{}", False),
         (
+            '{"text": "This is a test post", "createdAt": "2023-10-01T12:00:00Z"}',
+            False
+        ),
+        (
             '{"text": "This is a test post", "createdAt": "2023-10-01T12:00:00Z", '
             '"source": "bluesky"}',
             True
