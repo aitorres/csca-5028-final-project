@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Chart instances
   let sourceChart, sentiment24hChart, sentimentOverallChart;
 
+  // Post count tracking
+  let currentPostCount = 0;
+
   // Chart color schemes
   const sourceColors = ['#0d6efd', '#fd7e14'];
   const sentimentColors = {
@@ -205,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Function to show confirmation message
-  function showConfirmationMessage(message = 'Table data refreshed successfully!') {
+  function showConfirmationMessage(message = 'Post data loaded successfully!') {
     const alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-info alert-dismissible fade show';
     alertDiv.setAttribute('role', 'alert');
@@ -223,6 +226,32 @@ document.addEventListener('DOMContentLoaded', function() {
       alertDiv.classList.remove('show');
       setTimeout(() => alertDiv.remove(), 150);
     }, 5000);
+  }
+
+  // Function to show new posts alert
+  function showNewPostsAlert(newPostCount) {
+    // Remove any existing new posts alert
+    removeNewPostsAlert();
+
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-warning alert-dismissible fade show new-posts-alert';
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.innerHTML = `
+      <i class="fas fa-bell me-2"></i>There ${newPostCount === 1 ? 'is' : 'are'} ${newPostCount} new post${newPostCount === 1 ? '' : 's'} available. Click "Refresh Data" to update the table.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Insert the alert before the table card
+    const tableCard = document.querySelector('#postsCard');
+    tableCard.parentNode.insertBefore(alertDiv, tableCard);
+  }
+
+  // Function to remove new posts alert
+  function removeNewPostsAlert() {
+    const existingAlert = document.querySelector('.new-posts-alert');
+    if (existingAlert) {
+      existingAlert.remove();
+    }
   }
 
   // Function to fetch and update table data
@@ -253,8 +282,14 @@ document.addEventListener('DOMContentLoaded', function() {
       // Redraw the table
       eventsTable.draw();
 
+      // Update current post count
+      currentPostCount = posts.length;
+
       hideTableSpinner();
       showConfirmationMessage();
+
+      // Remove new posts alert when data is refreshed
+      removeNewPostsAlert();
 
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -263,9 +298,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Function to check for new posts
+  async function checkForNewPosts() {
+    try {
+      const response = await fetch('/api/posts/count');
+      if (response.ok) {
+        const data = await response.json();
+        const serverPostCount = data.count;
+
+        if (serverPostCount > currentPostCount) {
+          const newPostsCount = serverPostCount - currentPostCount;
+          showNewPostsAlert(newPostsCount);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for new posts:', error);
+    }
+  }
+
   // Load data on page load
   refreshTableData();
   refreshCharts();
+
+  // Start periodic check for new posts
+  setInterval(checkForNewPosts, 15000)
 
   // Form validation
   const entryForm = document.querySelector('#addEventModal form');
@@ -322,6 +378,9 @@ document.addEventListener('DOMContentLoaded', function() {
       // Show loading state
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Refreshing...';
+
+      // Remove new posts alert when refresh is clicked
+      removeNewPostsAlert();
 
       try {
         // Refresh both table data and charts
