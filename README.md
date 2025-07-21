@@ -2,6 +2,9 @@
 
 ![Screenshot of the application's web interface](./images/homepage.png)
 
+> NOTE: this GitHub repository has been set to public for the duration of the course as the project report links
+> to the files hosted in the repository. The repository will be set to private after the course ends.
+
 This is the final project for the CSCA-5028 course ("Applications of Software Architecture for Big Data"),
 taken as part of University of Colorado-Boulder's Master of Science in Computer Science online program,
 by Andres Torres.
