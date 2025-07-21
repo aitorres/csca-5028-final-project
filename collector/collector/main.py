@@ -9,6 +9,7 @@ import os
 from typing import Any, Final, Optional
 
 import pika
+import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from websockets.asyncio.client import connect
@@ -136,10 +137,14 @@ def transform_record_to_message(record: dict[str, Any]) -> str:
     return json.dumps(message, ensure_ascii=False)
 
 
-def process_websocket_event(message: str, channel: BlockingChannel) -> None:
+def process_websocket_event(message: str, channel: BlockingChannel) -> bool:
     """
     Processes a message received from the WebSocket connection,
     which represents a Bluesky Jetstream event.
+
+    :param message: The message received from the WebSocket connection.
+    :param channel: The RabbitMQ channel to publish the message to.
+    :return: True if the message was processed successfully, False otherwise.
     """
 
     record = parse_and_filter_record(message)
@@ -150,16 +155,26 @@ def process_websocket_event(message: str, channel: BlockingChannel) -> None:
         if filtered_record is not None:
             message = transform_record_to_message(filtered_record)
             logger.info("Record related to Vancouver found: %s", message)
-
-            channel.basic_publish(
-                exchange='',
-                routing_key=RABBITMQ_QUEUE_NAME,
-                body=message,
-                properties=pika.BasicProperties(
-                    delivery_mode=pika.DeliveryMode.Persistent,
+            try:
+                channel.basic_publish(
+                    exchange='',
+                    routing_key=RABBITMQ_QUEUE_NAME,
+                    body=message,
+                    properties=pika.BasicProperties(
+                        delivery_mode=pika.DeliveryMode.Persistent,
+                    )
                 )
-            )
+                logger.info(
+                    "Record published to RabbitMQ queue '%s'.",
+                    RABBITMQ_QUEUE_NAME
+                )
+            except pika.exceptions.StreamLostError:
+                logger.error("Connection to RabbitMQ lost!")
+                return False
+
             logger.info("Record published to RabbitMQ queue '%s'.", RABBITMQ_QUEUE_NAME)
+
+    return True
 
 
 async def main():
@@ -180,7 +195,12 @@ async def main():
         logger.info("Listening for messages from the WebSocket...")
         while True:
             message = await websocket.recv()
-            process_websocket_event(message, channel)
+            success = process_websocket_event(message, channel)
+
+            if not success:
+                logger.error("Failed to process message, resetting RabbitMQ channel...")
+                channel = setup_queue()
+                logger.info("RabbitMQ channel reset successfully.")
 
 
 if __name__ == "__main__":
