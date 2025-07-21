@@ -136,3 +136,128 @@ def test_get_posts_api(mocker, web_client) -> None:
         """
     )
     mock_cursor.close.assert_called_once()
+
+
+def test_get_post_source_statistics(mocker, web_client) -> None:
+    """
+    Tests the post source statistics API route of the web application.
+
+    Since this API endpoint makes a call to the database,
+    we mock the database connection and use a spy to assert
+    we are making the expected calls.
+    """
+
+    mock_db = mocker.MagicMock()
+    mock_cursor = mocker.MagicMock()
+    mock_db.cursor.return_value = mock_cursor
+    mock_cursor.fetchall.return_value = [
+        ("bluesky", 10),
+        ("user", 5),
+    ]
+
+    mocker.patch('web.main.get_db_connection', return_value=mock_db)
+
+    response = web_client.get('/api/posts/statistics/sources')
+    assert response.status_code == 200
+    data = response.get_json()
+
+    assert data == {
+        "labels": ["bluesky", "user"],
+        "data": [10, 5]
+    }
+
+    mock_cursor.execute.assert_called_once_with(
+        """
+        SELECT source, COUNT(*) as count
+        FROM posts
+        GROUP BY source
+        """
+    )
+    mock_cursor.close.assert_called_once()
+
+
+def test_get_post_sentiment_statistics(mocker, web_client) -> None:
+    """
+    Tests the post sentiment statistics API route of the web application.
+
+    Since this API endpoint makes a call to the database,
+    we mock the database connection and use a spy to assert
+    we are making the expected calls.
+    """
+
+    mock_db = mocker.MagicMock()
+    mock_cursor = mocker.MagicMock()
+    mock_db.cursor.return_value = mock_cursor
+    mock_cursor.fetchall.return_value = [
+        ("positive", 20),
+        ("negative", 10),
+        ("neutral", 5),
+    ]
+
+    mocker.patch('web.main.get_db_connection', return_value=mock_db)
+
+    response = web_client.get('/api/posts/statistics/sentiment')
+    assert response.status_code == 200
+    data = response.get_json()
+
+    assert data == {
+        "labels": ["positive", "negative", "neutral"],
+        "data": [20, 10, 5]
+    }
+
+    mock_cursor.execute.assert_called_once_with(
+        """
+        SELECT sentiment, COUNT(*) as count
+        FROM posts
+    GROUP BY sentiment"""
+    )
+    mock_cursor.close.assert_called_once()
+
+
+def test_get_post_sentiment_statistics_with_interval(mocker, web_client) -> None:
+    """
+    Tests the post sentiment statistics API route with a time interval,
+    including both valid and invalid queries.
+
+    Since this API endpoint makes a call to the database,
+    we mock the database connection and use a spy to assert
+    we are making the expected calls.
+    """
+
+    # Checking for invalid cases first
+    response = web_client.get('/api/posts/statistics/sentiment?hours=invalid')
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "If specified, hours must be a valid integer"}
+
+    response = web_client.get('/api/posts/statistics/sentiment?hours=-1')
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "If specified, hours must be a positive integer"}
+
+    # Checking for valid case
+    query = f"""
+        SELECT sentiment, COUNT(*) as count
+        FROM posts
+    WHERE created_at >= NOW() - INTERVAL '24 hours' GROUP BY sentiment"""
+
+    mock_db = mocker.MagicMock()
+    mock_cursor = mocker.MagicMock()
+    mock_db.cursor.return_value = mock_cursor
+    mock_cursor.fetchall.return_value = [
+        ("positive", 15),
+        ("negative", 7),
+        ("neutral", 3),
+    ]
+
+    mocker.patch('web.main.get_db_connection', return_value=mock_db)
+
+    response = web_client.get(f'/api/posts/statistics/sentiment?hours=24')
+    assert response.status_code == 200
+    data = response.get_json()
+
+    assert data == {
+        "labels": ["positive", "negative", "neutral"],
+        "data": [15, 7, 3]
+    }
+
+    mock_cursor.execute.assert_called_once_with(query)
+    mock_cursor.close.assert_called_once()

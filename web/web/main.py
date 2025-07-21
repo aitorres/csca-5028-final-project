@@ -7,7 +7,7 @@ import logging
 from typing import Final
 
 import psycopg2
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +83,83 @@ def get_posts() -> tuple[list[dict], int]:
             "source": post[5]
         } for post in posts
     ], 200
+
+
+@app.route("/api/posts/statistics/sources", methods=["GET"])
+def get_post_source_statistics() -> tuple[dict, int]:
+    """
+    API route to retrieve statistics about post sources,
+    used by the front-end to display a pie chart.
+    """
+
+    logger.info("Post source statistics API route accessed")
+
+    db = get_db_connection()
+    cursor = db.cursor()
+    cursor.execute(
+        """
+        SELECT source, COUNT(*) as count
+        FROM posts
+        GROUP BY source
+        """
+    )
+    results = cursor.fetchall()
+    cursor.close()
+
+    data = {
+        "labels": [row[0] for row in results],
+        "data": [row[1] for row in results]
+    }
+    return data, 200
+
+
+@app.route("/api/posts/statistics/sentiment", methods=["GET"])
+def get_post_sentiment_statistics() -> tuple[dict, int]:
+    """
+    API route to retrieve statistics about post sentiment,
+    used by the front-end to display a pie chart.
+
+    Query parameters:
+        hours: Optional integer representing hours to look back.
+                  If not provided, defaults to 24 hours.
+    """
+
+    logger.info("Post sentiment statistics API route accessed")
+
+    # Retrieving and validating the 'hours' query parameter if it exists
+    hours = request.args.get('hours', None)
+    if hours is not None:
+        try:
+            hours = int(hours)
+
+            if hours <= 0:
+                return {"error": "If specified, hours must be a positive integer"}, 400
+        except ValueError:
+            return {"error": "If specified, hours must be a valid integer"}, 400
+
+    # If no hours is specified, we query for the whole history,
+    # otherwise we use the specified hours (in hours) to filter posts
+    query = f"""
+        SELECT sentiment, COUNT(*) as count
+        FROM posts
+    """
+
+    if hours is not None:
+        query += f"WHERE created_at >= NOW() - INTERVAL '{hours} hours' "
+
+    query += "GROUP BY sentiment"
+
+    db = get_db_connection()
+    cursor = db.cursor()
+    cursor.execute(query)
+    results = cursor.fetchall()
+    cursor.close()
+
+    data = {
+        "labels": [row[0] for row in results],
+        "data": [row[1] for row in results]
+    }
+    return data, 200
 
 
 @app.route("/health", methods=["GET"])

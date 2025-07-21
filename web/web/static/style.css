@@ -147,6 +147,22 @@ footer .fa-heart {
   50% { transform: scale(1.2); }
 }
 
+/* Chart styles */
+.chart-card {
+  transition: transform 0.3s ease;
+}
+
+.chart-card:hover {
+  transform: translateY(-2px);
+}
+
+#sourceChart,
+#sentiment24hChart,
+#sentimentOverallChart {
+  max-width: 250px;
+  max-height: 250px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .display-5 {
@@ -165,5 +181,12 @@ footer .fa-heart {
     float: none !important;
     width: 100% !important;
     margin-bottom: 0.5rem;
+  }
+
+  #sourceChart,
+  #sentiment24hChart,
+  #sentimentOverallChart {
+    max-width: 200px;
+    max-height: 200px;
   }
 }

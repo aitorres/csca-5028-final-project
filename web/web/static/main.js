@@ -2,6 +2,100 @@ document.addEventListener('DOMContentLoaded', function() {
   // Track if user is hovering over the table
   let isHoveringTable = false;
 
+  // Chart instances
+  let sourceChart, sentiment24hChart, sentimentOverallChart;
+
+  // Chart color schemes
+  const sourceColors = ['#0d6efd', '#fd7e14'];
+  const sentimentColors = {
+    'positive': '#198754',
+    'neutral': '#6c757d',
+    'negative': '#dc3545'
+  };
+
+  // Function to create or update pie chart
+  function createOrUpdateChart(canvasId, chartInstance, data, colors) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+
+    const chartColors = colors || data.labels.map((_, index) => sourceColors[index % sourceColors.length]);
+
+    return new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: data.labels,
+        datasets: [{
+          data: data.data,
+          backgroundColor: chartColors,
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              usePointStyle: true,
+              font: {
+                size: 12
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.parsed;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Function to fetch and update charts
+  async function refreshCharts() {
+    try {
+      // Fetch source data
+      const sourceResponse = await fetch('/api/posts/statistics/sources');
+      if (sourceResponse.ok) {
+        const sourceData = await sourceResponse.json();
+        sourceChart = createOrUpdateChart('sourceChart', sourceChart, sourceData, sourceColors);
+      }
+
+      // Fetch 24h sentiment data
+      const sentiment24hResponse = await fetch('/api/posts/statistiscs/sentiment?hours=24');
+      if (sentiment24hResponse.ok) {
+        const sentiment24hData = await sentiment24hResponse.json();
+        const sentiment24hColors = sentiment24hData.labels.map(label => sentimentColors[label]);
+        sentiment24hChart = createOrUpdateChart('sentiment24hChart', sentiment24hChart, sentiment24hData, sentiment24hColors);
+      }
+
+      // Fetch overall sentiment data
+      const sentimentOverallResponse = await fetch('/api/posts/statistics/sentiment');
+      if (sentimentOverallResponse.ok) {
+        const sentimentOverallData = await sentimentOverallResponse.json();
+        const sentimentOverallColors = sentimentOverallData.labels.map(label => sentimentColors[label]);
+        sentimentOverallChart = createOrUpdateChart('sentimentOverallChart', sentimentOverallChart, sentimentOverallData, sentimentOverallColors);
+      }
+
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+    }
+  }
+
   // Initialize DataTable
   const eventsTable = $('#eventsTable').DataTable({
     responsive: true,
@@ -186,9 +280,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Load data on page load
   refreshTableData();
+  refreshCharts();
 
   // Set up auto-refresh every 30 seconds
-  setInterval(refreshTableData, 30000);
+  setInterval(() => {
+    refreshTableData();
+    refreshCharts();
+  }, 30000);
 
   // Form validation
   const entryForm = document.querySelector('#addEventModal form');
