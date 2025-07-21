@@ -1,7 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-  // Track if user is hovering over the table
-  let isHoveringTable = false;
-
   // Chart instances
   let sourceChart, sentiment24hChart, sentimentOverallChart;
 
@@ -171,13 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
     dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip'
   });
 
-  // Track table hover state
-  $('#eventsTable').on('mouseenter', function() {
-    isHoveringTable = true;
-  }).on('mouseleave', function() {
-    isHoveringTable = false;
-  });
-
   // Function to show spinner overlay on table
   function showTableSpinner() {
     const tableWrapper = document.querySelector('#eventsTable_wrapper');
@@ -237,11 +227,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Function to fetch and update table data
   async function refreshTableData() {
-    // Don't refresh if user is hovering over the table
-    if (isHoveringTable) {
-      return;
-    }
-
     try {
       showTableSpinner();
 
@@ -281,12 +266,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load data on page load
   refreshTableData();
   refreshCharts();
-
-  // Set up auto-refresh every 30 seconds
-  setInterval(() => {
-    refreshTableData();
-    refreshCharts();
-  }, 30000);
 
   // Form validation
   const entryForm = document.querySelector('#addEventModal form');
@@ -329,6 +308,30 @@ document.addEventListener('DOMContentLoaded', function() {
           alertDiv.classList.remove('show');
           setTimeout(() => alertDiv.remove(), 150);
         }, 5000);
+      }
+    });
+  }
+
+  // Refresh data button event listener
+  const refreshDataBtn = document.getElementById('refreshDataBtn');
+  if (refreshDataBtn) {
+    refreshDataBtn.addEventListener('click', async function() {
+      const btn = this;
+      const originalHTML = btn.innerHTML;
+
+      // Show loading state
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Refreshing...';
+
+      try {
+        // Refresh both table data and charts
+        await Promise.all([refreshTableData(), refreshCharts()]);
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+      } finally {
+        // Restore button state
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
       }
     });
   }

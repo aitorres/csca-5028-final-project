@@ -102,9 +102,14 @@
         <div class="card shadow" id="postsCard">
           <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Posts</h5>
-            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addEventModal">
-              <i class="fas fa-plus me-1"></i> Add Post
-            </button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-primary btn-sm" id="refreshDataBtn">
+                <i class="fas fa-sync-alt me-1"></i> Refresh data
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addEventModal">
+                <i class="fas fa-plus me-1"></i> Add Post
+              </button>
+            </div>
           </div>
           <div class="card-body">
             <div class="table-responsive">
