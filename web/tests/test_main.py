@@ -231,10 +231,12 @@ def test_get_post_sentiment_statistics_with_interval(mocker, web_client) -> None
 
     response = web_client.get('/api/posts/statistics/sentiment?hours=-1')
     assert response.status_code == 400
-    assert response.get_json() == {"error": "If specified, hours must be a positive integer"}
+    assert response.get_json() == {
+        "error": "If specified, hours must be a positive integer"
+    }
 
     # Checking for valid case
-    query = f"""
+    query = """
         SELECT sentiment, COUNT(*) as count
         FROM posts
     WHERE created_at >= NOW() - INTERVAL '24 hours' GROUP BY sentiment"""
@@ -250,7 +252,7 @@ def test_get_post_sentiment_statistics_with_interval(mocker, web_client) -> None
 
     mocker.patch('web.main.get_db_connection', return_value=mock_db)
 
-    response = web_client.get(f'/api/posts/statistics/sentiment?hours=24')
+    response = web_client.get('/api/posts/statistics/sentiment?hours=24')
     assert response.status_code == 200
     data = response.get_json()
 

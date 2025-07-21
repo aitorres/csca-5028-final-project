@@ -47,7 +47,8 @@ def get_post_count() -> tuple[dict, int]:
     db = get_db_connection()
     cursor = db.cursor()
     cursor.execute("SELECT COUNT(*) FROM posts")
-    count = cursor.fetchone()[0]
+    cursor_data = cursor.fetchone()
+    count = cursor_data[0] if cursor_data else 0
     cursor.close()
 
     return {"count": count}, 200
@@ -126,27 +127,27 @@ def get_post_sentiment_statistics() -> tuple[dict, int]:
 
     logger.info("Post sentiment statistics API route accessed")
 
-    # Retrieving and validating the 'hours' query parameter if it exists
-    hours = request.args.get('hours', None)
-    if hours is not None:
-        try:
-            hours = int(hours)
-
-            if hours <= 0:
-                return {"error": "If specified, hours must be a positive integer"}, 400
-        except ValueError:
-            return {"error": "If specified, hours must be a valid integer"}, 400
-
-    # If no hours is specified, we query for the whole history,
-    # otherwise we use the specified hours (in hours) to filter posts
-    query = f"""
+    # Base query
+    query = """
         SELECT sentiment, COUNT(*) as count
         FROM posts
     """
 
-    if hours is not None:
-        query += f"WHERE created_at >= NOW() - INTERVAL '{hours} hours' "
+    # Retrieving and validating the 'hours' query parameter if it exists
+    hours_param = request.args.get('hours', None)
+    if hours_param is not None:
+        try:
+            hours = int(hours_param)
 
+            if hours <= 0:
+                return {"error": "If specified, hours must be a positive integer"}, 400
+
+            # The hours parameter is valid, filter by hours on the query
+            query += f"WHERE created_at >= NOW() - INTERVAL '{hours} hours' "
+        except ValueError:
+            return {"error": "If specified, hours must be a valid integer"}, 400
+
+    # Finalize the query by grouping by sentiment
     query += "GROUP BY sentiment"
 
     db = get_db_connection()

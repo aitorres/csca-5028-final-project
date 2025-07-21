@@ -195,7 +195,8 @@ def check_if_text_exists(db: psycopg2.extensions.connection, text: str) -> bool:
         """,
         (text,)
     )
-    exists = cursor.fetchone()[0]
+    cursor_data = cursor.fetchone()
+    exists = cursor_data[0] if cursor_data else False
     cursor.close()
 
     return exists
@@ -223,12 +224,10 @@ def process_queue_message(db: psycopg2.extensions.connection, message: str) -> N
         logger.error("Failed to decode JSON message: %s", e)
         return
 
-    if not isinstance(record, dict):
-        logger.error("Record is not a dictionary: %s", record)
-        return
-
-    if any(key not in record for key in ["text", "createdAt", "source"]):
-        logger.error("Record is missing required fields: %s", record)
+    if not isinstance(record, dict) or any(
+        key not in record for key in ["text", "createdAt", "source"]
+    ):
+        logger.error("Record is not a valid dictionary: %s", record)
         return
 
     text = record["text"]
