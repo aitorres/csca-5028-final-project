@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       // Fetch 24h sentiment data
-      const sentiment24hResponse = await fetch('/api/posts/statistiscs/sentiment?hours=24');
+      const sentiment24hResponse = await fetch('/api/posts/statistics/sentiment?hours=24');
       if (sentiment24hResponse.ok) {
         const sentiment24hData = await sentiment24hResponse.json();
         const sentiment24hColors = sentiment24hData.labels.map(label => sentimentColors[label]);
