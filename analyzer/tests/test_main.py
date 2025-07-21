@@ -8,6 +8,7 @@ import pytest
 
 from analyzer.main import (
     analyze_sentiment,
+    check_if_text_exists,
     check_for_bad_words,
     preprocess_text,
     process_queue_message,
@@ -81,6 +82,36 @@ def test_analyze_sentiment(input_text: str, expected_output: str) -> None:
     assert analyze_sentiment(input_text) == expected_output
 
 
+def test_check_if_text_exists(mocker) -> None:
+    """
+    Unit test for the function that checks if a text
+    already exists in the database.
+    This uses a mock database connection to simulate
+    the behavior without needing a real database.
+    """
+
+    mock_db = mocker.Mock()
+    mock_cursor = mocker.Mock()
+    mock_db.cursor.return_value = mock_cursor
+
+    # Simulate the text not existing in the database
+    mock_cursor.fetchone.return_value = [False]
+
+    result = check_if_text_exists(mock_db, "This is a test post")
+
+    assert result is False
+    mock_cursor.execute.assert_called_once_with(
+        """
+        SELECT EXISTS(
+            SELECT 1 FROM posts
+            WHERE content = %s
+            AND inserted_at > NOW() - INTERVAL '24 hours'
+        )
+        """,
+        ("This is a test post",)
+    )
+
+
 @pytest.mark.parametrize(
     "message, is_valid_message",
     [
@@ -123,6 +154,7 @@ def test_process_queue_message(mocker, message: str, is_valid_message: bool) -> 
     # Mock the database connection and cursor
     mock_db = mocker.Mock()
     mock_cursor = mocker.Mock()
+    mock_cursor.fetchone.return_value = [False]
     mock_db.cursor.return_value = mock_cursor
 
     # Call the function under test
@@ -133,8 +165,11 @@ def test_process_queue_message(mocker, message: str, is_valid_message: bool) -> 
         mock_cursor.execute.assert_not_called()
         return
 
-    # If the message is valid, ensure SQL execution occurs
-    mock_cursor.execute.assert_called_once()
+    # If the message is valid, ensure SQL execution occurs,
+    # we call the cursor twice: once to check existence and once to insert
+    mock_cursor.execute.assert_called()
+    assert mock_cursor.execute.call_count == 2
+
     args, _ = mock_cursor.execute.call_args
     assert "INSERT INTO posts (content, sentiment, created_at, source)" in args[0]
     assert "VALUES" in args[0]

@@ -174,6 +174,33 @@ def check_for_bad_words(text: str) -> bool:
     return bool(re.search(bad_words_pattern, text))
 
 
+def check_if_text_exists(db: psycopg2.extensions.connection, text: str) -> bool:
+    """
+    Checks if the given text already exists in the database and has been
+    saved within the last 24 hours, to prevent storage of recent duplicates.
+
+    :param db: The database connection.
+    :param text: The text to check for existence.
+    :return: True if the text exists, False otherwise.
+    """
+
+    cursor = db.cursor()
+    cursor.execute(
+        """
+        SELECT EXISTS(
+            SELECT 1 FROM posts
+            WHERE content = %s
+            AND inserted_at > NOW() - INTERVAL '24 hours'
+        )
+        """,
+        (text,)
+    )
+    exists = cursor.fetchone()[0]
+    cursor.close()
+
+    return exists
+
+
 def process_queue_message(db: psycopg2.extensions.connection, message: str) -> None:
     """
     Given a message from the RabbitMQ queue,
@@ -218,6 +245,11 @@ def process_queue_message(db: psycopg2.extensions.connection, message: str) -> N
     logger.info("Sentiment analysis result: %s", sentiment)
 
     cursor = db.cursor()
+
+    if check_if_text_exists(db, preprocessed_text):
+        logger.info("Text already exists in the database, skipping insertion.")
+        cursor.close()
+        return
 
     try:
         cursor.execute(
